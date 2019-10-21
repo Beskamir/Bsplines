@@ -22,7 +22,7 @@ void InputHandler::key(GLFWwindow* window, int key, int scancode, int action, in
 
 // Callback for mouse button presses
 void InputHandler::mouse(GLFWwindow* window, int button, int action, int mods) {
-	if(action==GLFW_PRESS)	{
+	if(action==GLFW_PRESS && button==GLFW_MOUSE_BUTTON_2)	{
 		// std::cout << mouseOldX << ", " << mouseOldY << std::endl;
 		mousePos->x = mouseOldX;
 		mousePos->y = mouseOldY;

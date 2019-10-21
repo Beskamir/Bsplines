@@ -36,19 +36,26 @@ private:
 
 	void createTestGeometryObject();
 
+	// Bspline generator
+	void createControlPoints();
+	void createActivePoint();
+	void createBsplineCurve();
+	void createDemoLines();
+	void createDemoPoint();
 	
 	// Class variables for controlling the hypocycloid.
 	float rotation = 0;
 	float scale = 1;
-	int step = 1;
+	int curveOrder = 1;
+	int uIncrement = 1;
 
-	// Class variable for the hypocycloid
-	// Geometry* hypocycloid;
-	// Geometry* innerCircle;
-	// Geometry* outerCircle;
-	// Geometry* lastPoint;
-	// Geometry* polynomialPoints;
-	// Geometry* polynomialLine;
+	// Geometry storage for b-splines
+	Geometry* controlPoints;
+	Geometry* activePoint;
+	Geometry* bsplineCurve;
+	Geometry* demoLines;
+	Geometry* demoPoint;
+
 
 	glm::vec3 *mousePosition;
 

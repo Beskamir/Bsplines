@@ -84,6 +84,31 @@ void Program::createTestGeometryObject() {
 	geometryObjects.push_back(testObject);
 }
 
+void Program::createControlPoints() {
+	controlPoints = new Geometry();
+	
+}
+
+void Program::createActivePoint() {
+	activePoint = new Geometry();
+
+}
+
+void Program::createBsplineCurve() {
+	bsplineCurve = new Geometry();
+
+}
+
+void Program::createDemoLines() {
+	demoLines = new Geometry();
+
+}
+
+void Program::createDemoPoint() {
+	demoPoint = new Geometry();
+
+}
+
 
 void Program::drawUI() {
 	// Start ImGui frame
@@ -100,93 +125,19 @@ void Program::drawUI() {
 
 		ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		ImGui::ColorEdit4("line color", (float*)&lineColor);
-		// ImGui::DragInt("number of cycles", (int*)&cycles);
-		// if (cycles < 1) {
-		// 	cycles = 1;
-		// }
 		
 		ImGui::DragFloat("rotation", (float*)&rotation, 0.1f);
 		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
-		ImGui::DragInt("B-spline resolution", (int*)&step, 1);
-		if (step < 1) {
-			step = 1;
+
+		ImGui::DragInt("B-spline order (k value)", (int*)&curveOrder, 1);
+		if (curveOrder < 1) {
+			curveOrder = 1;
 		}
-		// ImGui::DragInt("draws before updating", (int*)&amount, 1);
-		// if(amount<0) {
-		// 	amount = 0;
-		// }
+		ImGui::DragInt("B-spline resolution (u increment)", (int*)&uIncrement, 1);
+		if (uIncrement < 1) {
+			uIncrement = 1;
+		}
 
-		// if (ImGui::Button("refresh")) {
-		// 	parametersChanged = true;
-		// 	theta = 0;
-		// 	thetaCi = 0;
-		// 	thetaCo = 0;
-		// 	enablePoints = false;
-		// }
-
-		// ImGui::SameLine();
-		//
-		// if (ImGui::Button("reset to defaults")) {
-		// 	outerRadius = 4;
-		// 	innerRadius = 1;
-		// 	cycles = 1;
-		// 	rotation = 0;
-		// 	scale = 1;
-		// 	amount = 1;
-		// 	step = 100;
-		// 	circleDetail = 100;
-		// 	parametersChanged = true;
-		// 	hideInnerCircle = false;
-		// 	hideOuterCircle = false;
-		// 	hideDot = false;
-		// 	enablePoints = false;
-		// 	offset[0] = 0;
-		// 	offset[1] = 0;
-		//
-		//
-		// 	theta = 0;
-		// 	thetaCi = 0;
-		// 	thetaCo = 0;
-		// }
-		//
-		// ImGui::SameLine();
-		//
-		// ImGui::Checkbox("pause animation", (bool*)&pauseAnimation);
-		//
-		// ImGui::SameLine();
-		//
-		// ImGui::Checkbox("view hypocycloid", (bool*)&viewHypocycloid);
-		//
-		// ImGui::DragInt("circle resolutions", (int*)&circleDetail, 1);
-		// if (circleDetail < 1) {
-		// 	circleDetail = 1;
-		// }
-		// ImGui::Checkbox("hide inner circle", (bool*)&hideInnerCircle);
-		//
-		// ImGui::SameLine();
-		//
-		// ImGui::Checkbox("hide outer circle", (bool*)&hideOuterCircle);
-		//
-		// ImGui::SameLine();
-		//
-		// ImGui::Checkbox("hide leading dot", (bool*)&hideDot);
-		//
-		//
-		//
-		// if (ImGui::Button("apply scale & translation to points")) {
-		// 	applyPolynomialScale = true;
-		// }
-		//
-		// ImGui::SameLine();
-		//
-		// ImGui::Checkbox("enable placing control points", (bool*)&enablePoints);
-		// if(enablePoints) {
-		// 	mousePosition->z = 0;
-		// }
-		//
-		// ImGui::DragFloat("polynomial point scale", (float*)&polynomialScale, 0.001f);
-		//
-		// ImGui::DragFloat2("translate the model", (float*)&offset, 0.01f);
 
 		ImGui::End();
 	}
@@ -194,15 +145,7 @@ void Program::drawUI() {
 
 // Main loop
 void Program::mainLoop() {
-	// createTestGeometryObject();
-	// createCycloid();
-	//
-	// createOuterCircle();
-	// createInnerCircle();
-	// createLastPoint();
-	//
-	// createPolynomial();
-
+	
 	createTestGeometryObject();
 	
 	// Our state
@@ -213,7 +156,6 @@ void Program::mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		
 		drawUI();
 
 		// Rendering
