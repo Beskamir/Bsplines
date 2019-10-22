@@ -269,11 +269,14 @@ void Program::updateBsplineCurve() {
 	}
 	std::cout<<std::endl;
 	// Iterate through u values and generate curve
-	for (float u = 0; u <= knots[knots.size()-1]; u+=(1/(float)uIncrement)) 
+	for (float u = 0; u < knots[knots.size()-1]; u+=(1/(float)uIncrement)) 
 	{
 		// Get the value of which control points matter
 		int delta = computeDelta(u, controlSize);
 		if(delta<0) { return; }
+		// delta -= (curveOrder - 2);
+		std::cout << "Delta: " << delta << std::endl;
+		std::cout << "u: " << u << std::endl;
 		// Get the contributing points
 		std::vector<glm::vec3> contributorPoints;
 		contributorPoints.reserve(curveOrder - 1);
