@@ -79,10 +79,7 @@ void Program::createTestGeometryObject() {
 void Program::createControlPoints() {
 	controlPoints = new Geometry();
 	controlPoints->drawMode = GL_POINTS;
-
 	renderEngine->assignBuffers(*controlPoints);
-	// updateControlPoints();
-	// renderEngine->updateBuffers(*controlPoints);
 	geometryObjects.push_back(controlPoints);
 
 }
@@ -92,43 +89,45 @@ void Program::createActivePoint() {
 	activePoint->drawMode = GL_POINTS;
 	activePoint->color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	renderEngine->assignBuffers(*activePoint);
-	// updateActivePoint();
-	// renderEngine->updateBuffers(*controlPoints);
 	geometryObjects.push_back(activePoint);
 }
 
 void Program::createBsplineCurve() {
 	bsplineCurve = new Geometry();
-
+	renderEngine->assignBuffers(*bsplineCurve);
+	geometryObjects.push_back(bsplineCurve);
 }
 
 void Program::createDemoLines() {
 	demoLines = new Geometry();
-
+	demoLines->color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	renderEngine->assignBuffers(*demoLines);
+	geometryObjects.push_back(demoLines);
 }
 
 void Program::createDemoPoint() {
 	demoPoint = new Geometry();
-
+	demoPoint->drawMode = GL_POINTS;
+	demoPoint->color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	renderEngine->assignBuffers(*demoPoint);
+	geometryObjects.push_back(demoPoint);
 }
 
 void Program::updateControlPoints() {
+	controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
+	controlPoints->modelMatrix = glm::mat4(1.f);
+	controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
+	controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+	renderEngine->updateBuffers(*controlPoints);
 }
 
 
 void Program::addControlPoint(glm::vec3 oldPoint) {
-	 controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
-
-    controlPoints->modelMatrix = glm::mat4(1.f);
-    controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
-    controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
-
 	activePointIndex = controlPoints->verts.size();
 
 	controlPoints->verts.emplace_back(oldPoint);
-
-    renderEngine->updateBuffers(*controlPoints);
 }
 
 glm::vec3 Program::fixMousePoisiton() const {
@@ -236,15 +235,15 @@ void Program::updateActivePoint() {
 }
 
 void Program::updateBsplineCurve() {
-
+	// TODO: algorithm to generate b-spline curve
 }
 
 void Program::updateDemoLines() {
-
+	// Todo: create lines to show bspline curve generation graphically
 }
 
 void Program::updateDemoPoint() {
-
+	// Todo: current u value
 }
 
 
@@ -276,7 +275,6 @@ void Program::drawUI() {
 			uIncrement = 1;
 		}
 
-
 		if(ImGui::Button("remove point")) {
 			removePoint = true;
 		}
@@ -297,12 +295,18 @@ void Program::mainLoop() {
 	// createTestGeometryObject();
 	createActivePoint();
 	createControlPoints();
+	createBsplineCurve();
+	createDemoLines();
+	createDemoPoint();
 
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
 		updateActivePoint();
 		updateControlPoints();
+		updateBsplineCurve();
+		updateDemoLines();
+		updateDemoPoint();
 
 		drawUI();
 
