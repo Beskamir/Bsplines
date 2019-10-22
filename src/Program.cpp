@@ -87,8 +87,9 @@ void Program::createTestGeometryObject() {
 void Program::createControlPoints() {
 	controlPoints = new Geometry();
 	controlPoints->drawMode = GL_POINTS;
+
 	renderEngine->assignBuffers(*controlPoints);
-	updateControlPoints();
+	// updateControlPoints();
 	// renderEngine->updateBuffers(*controlPoints);
 	geometryObjects.push_back(controlPoints);
 
@@ -96,7 +97,12 @@ void Program::createControlPoints() {
 
 void Program::createActivePoint() {
 	activePoint = new Geometry();
-
+	activePoint->drawMode = GL_POINTS;
+	activePoint->color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+	renderEngine->assignBuffers(*activePoint);
+	// updateActivePoint();
+	// renderEngine->updateBuffers(*controlPoints);
+	geometryObjects.push_back(activePoint);
 }
 
 void Program::createBsplineCurve() {
@@ -115,12 +121,58 @@ void Program::createDemoPoint() {
 }
 
 void Program::updateControlPoints() {
-	
-	controlPoints->modelMatrix = glm::mat4(1.f);
-	controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
-	controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
+ //
+	// controlPoints->modelMatrix = glm::mat4(1.f);
+	// controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
+	// controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+ //
+	// if(mousePosition->z == 1) {
+	// 	int width, height;
+ //
+	// 	// Boolean for catching just a single click
+	// 	mousePosition->z = 0;
+ //
+	// 	// Convert screen res to screen space
+	// 	glfwGetWindowSize(window, &width, &height);
+	// 	glm::vec4 mousePosFix = glm::vec4(
+	// 		((mousePosition->x - (float)width / 2) / ((float)width / 2)) * 10 * (float)width / (float)height,
+	// 		(((float)height / 2 - mousePosition->y) / ((float)height / 2)) * 10,
+	// 		0.0f, 1.0f
+	// 	);
+	// 	std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
+ //
+	// 	mousePosFix = glm::inverse(controlPoints->modelMatrix) * mousePosFix;
+ //
+	// 	controlPoints->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
+ //
+	// }
+ //
+ //
+	// renderEngine->updateBuffers(*controlPoints);
+}
 
-	if(mousePosition->z == 1) {
+void Program::addControlPoint(glm::vec3 oldPoint) {
+	 controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
+
+    controlPoints->modelMatrix = glm::mat4(1.f);
+    controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
+    controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+	controlPoints->verts.emplace_back(oldPoint);
+
+
+    renderEngine->updateBuffers(*controlPoints);
+}
+
+void Program::updateActivePoint() {
+	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
+
+	activePoint->modelMatrix = glm::mat4(1.f);
+	activePoint->modelMatrix = glm::scale(activePoint->modelMatrix, glm::vec3(scale));
+	activePoint->modelMatrix = glm::rotate(activePoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+	if (mousePosition->z == 1) {
 		int width, height;
 
 		// Boolean for catching just a single click
@@ -135,18 +187,18 @@ void Program::updateControlPoints() {
 		);
 		std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
 
-		mousePosFix = glm::inverse(controlPoints->modelMatrix) * mousePosFix;
+		mousePosFix = glm::inverse(activePoint->modelMatrix) * mousePosFix;
 
-		controlPoints->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
-
+		if(activePoint->verts.empty()) {
+			activePoint->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
+		} else {
+			addControlPoint(activePoint->verts[0]);
+			activePoint->verts[0] = (glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
+		}
 	}
 
 
-	renderEngine->updateBuffers(*controlPoints);
-}
-
-void Program::updateActivePoint() {
-
+	renderEngine->updateBuffers(*activePoint);
 }
 
 void Program::updateBsplineCurve() {
@@ -198,17 +250,19 @@ void Program::drawUI() {
 // Main loop
 void Program::mainLoop() {
 	
-	// createTestGeometryObject();
-	createControlPoints();
-
 	// Our state
 	show_test_window = false;
 	clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
 	lineColor = ImVec4(1.0f, 1.0f, 0.0f, 1.00f);
 
+	// createTestGeometryObject();
+	createActivePoint();
+	createControlPoints();
+
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
+		updateActivePoint();
 		updateControlPoints();
 
 		drawUI();
@@ -221,7 +275,7 @@ void Program::mainLoop() {
 		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		renderEngine->render(geometryObjects, glm::mat4(1.f), glm::vec4(lineColor.x,lineColor.y,lineColor.z,lineColor.w));
+		renderEngine->render(geometryObjects, glm::mat4(1.f));
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 		glfwSwapBuffers(window);

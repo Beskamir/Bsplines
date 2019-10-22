@@ -36,14 +36,16 @@ private:
 
 	void createTestGeometryObject();
 
-	// Bspline generator
+	// Initialize all the geometry pointers
 	void createControlPoints();
 	void createActivePoint();
 	void createBsplineCurve();
 	void createDemoLines();
 	void createDemoPoint();
 
-	// Bspline generator
+	// Use the geometry pointers and fill them with relavent data
+	void addControlPoint(glm::vec3 oldPoint);
+
 	void updateControlPoints();
 	void updateActivePoint();
 	void updateBsplineCurve();

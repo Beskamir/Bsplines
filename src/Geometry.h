@@ -11,6 +11,7 @@ public:
 	Geometry();
 
 	GLuint drawMode;
+	glm::vec4 color;
 
 	GLuint vao;
 	GLuint vertexBuffer;

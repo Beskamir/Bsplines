@@ -5,4 +5,5 @@ Geometry::Geometry() {
 	vao = 0;
 	vertexBuffer = 0;
 	modelMatrix = glm::mat4(1.f);
+	color = glm::vec4(1.0f);
 }

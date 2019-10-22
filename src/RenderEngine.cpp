@@ -16,7 +16,7 @@ RenderEngine::RenderEngine(GLFWwindow* window) : window(window) {
 }
 
 // Called to render provided objects under view matrix
-void RenderEngine::render(const std::vector<Geometry*>& objects, glm::mat4 view, glm::vec4 color) {
+void RenderEngine::render(const std::vector<Geometry*>& objects, glm::mat4 view) {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glUseProgram(mainProgram);
 
@@ -26,7 +26,7 @@ void RenderEngine::render(const std::vector<Geometry*>& objects, glm::mat4 view,
 		glm::mat4 modelView = view * o->modelMatrix;
 		glUniformMatrix4fv(glGetUniformLocation(mainProgram, "modelView"), 1, GL_FALSE, glm::value_ptr(modelView));
 		glUniformMatrix4fv(glGetUniformLocation(mainProgram, "ortho"), 1, GL_FALSE, glm::value_ptr(ortho));
-		glUniform4fv(glGetUniformLocation(mainProgram, "color"), 1, &color[0]);
+		glUniform4fv(glGetUniformLocation(mainProgram, "color"), 1, &o->color[0]);
 		
 
 		glDrawArrays(o->drawMode, 0, o->verts.size());
