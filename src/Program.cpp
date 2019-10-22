@@ -86,7 +86,12 @@ void Program::createTestGeometryObject() {
 
 void Program::createControlPoints() {
 	controlPoints = new Geometry();
-	
+	controlPoints->drawMode = GL_POINTS;
+	renderEngine->assignBuffers(*controlPoints);
+	updateControlPoints();
+	// renderEngine->updateBuffers(*controlPoints);
+	geometryObjects.push_back(controlPoints);
+
 }
 
 void Program::createActivePoint() {
@@ -106,6 +111,53 @@ void Program::createDemoLines() {
 
 void Program::createDemoPoint() {
 	demoPoint = new Geometry();
+
+}
+
+void Program::updateControlPoints() {
+	
+	controlPoints->modelMatrix = glm::mat4(1.f);
+	controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
+	controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+	if(mousePosition->z == 1) {
+		int width, height;
+
+		// Boolean for catching just a single click
+		mousePosition->z = 0;
+
+		// Convert screen res to screen space
+		glfwGetWindowSize(window, &width, &height);
+		glm::vec4 mousePosFix = glm::vec4(
+			((mousePosition->x - (float)width / 2) / ((float)width / 2)) * 10 * (float)width / (float)height,
+			(((float)height / 2 - mousePosition->y) / ((float)height / 2)) * 10,
+			0.0f, 1.0f
+		);
+		std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
+
+		mousePosFix = glm::inverse(controlPoints->modelMatrix) * mousePosFix;
+
+		controlPoints->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
+
+	}
+
+
+	renderEngine->updateBuffers(*controlPoints);
+}
+
+void Program::updateActivePoint() {
+
+}
+
+void Program::updateBsplineCurve() {
+
+}
+
+void Program::updateDemoLines() {
+
+}
+
+void Program::updateDemoPoint() {
 
 }
 
@@ -146,8 +198,9 @@ void Program::drawUI() {
 // Main loop
 void Program::mainLoop() {
 	
-	createTestGeometryObject();
-	
+	// createTestGeometryObject();
+	createControlPoints();
+
 	// Our state
 	show_test_window = false;
 	clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
@@ -155,6 +208,8 @@ void Program::mainLoop() {
 
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
+		updateControlPoints();
 
 		drawUI();
 

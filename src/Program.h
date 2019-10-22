@@ -42,7 +42,14 @@ private:
 	void createBsplineCurve();
 	void createDemoLines();
 	void createDemoPoint();
-	
+
+	// Bspline generator
+	void updateControlPoints();
+	void updateActivePoint();
+	void updateBsplineCurve();
+	void updateDemoLines();
+	void updateDemoPoint();
+
 	// Class variables for controlling the hypocycloid.
 	float rotation = 0;
 	float scale = 1;
