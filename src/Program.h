@@ -51,6 +51,7 @@ private:
 	void updateControlPoints();
 	bool selectControlPoint();
 	void moveActivePoint();
+	void removeActivePoint();
 	void updateActivePoint();
 	void updateBsplineCurve();
 	void updateDemoLines();
@@ -61,6 +62,7 @@ private:
 	float scale = 1;
 	int curveOrder = 1;
 	int uIncrement = 1;
+	bool removePoint = false;
 
 	int activePointIndex = 0;
 

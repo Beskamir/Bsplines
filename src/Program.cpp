@@ -20,14 +20,6 @@ void Program::start() {
 		std::cerr << glewGetErrorString(err) << std::endl;
 	}
 
-	/*
-	bool err = gl3wInit() != 0;
-
-	if (err)
-	{
-		fprintf(stderr, "Failed to initialize OpenGL loader!\n");
-	}
-	*/
 	renderEngine = new RenderEngine(window);
 
 	mousePosition = new glm::vec3(0);
@@ -192,6 +184,28 @@ void Program::moveActivePoint() {
 	renderEngine->updateBuffers(*controlPoints);
 }
 
+void Program::removeActivePoint() {
+	const glm::vec3 mousePosFix = fixMousePoisiton();
+
+	if(controlPoints->verts.empty()) {
+		return; // If array is already empty, return so we don't crash
+	}
+
+	// Otherwise remove the active point and assign a new active point
+	controlPoints->verts.erase(controlPoints->verts.begin() + activePointIndex);
+
+	if(controlPoints->verts.empty()) {
+		activePoint->verts.clear();
+		activePointIndex = -1;
+	}
+	else {
+		activePointIndex = controlPoints->verts.size() - 1;
+		activePoint->verts[0] = controlPoints->verts[activePointIndex];
+	}
+	renderEngine->updateBuffers(*controlPoints);
+}
+
+
 void Program::updateActivePoint() {
 	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
@@ -211,6 +225,11 @@ void Program::updateActivePoint() {
 	if (mousePosition->z == 2) {
 		addActivePoint();
 		mousePosition->z = 0;
+	}
+
+	if (removePoint) {
+		removeActivePoint();
+		removePoint = false;
 	}
 	
 	renderEngine->updateBuffers(*activePoint);
@@ -248,13 +267,18 @@ void Program::drawUI() {
 		ImGui::DragFloat("rotation", (float*)&rotation, 0.1f);
 		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
 
-		ImGui::DragInt("B-spline order (k value)", (int*)&curveOrder, 1);
+		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1);
 		if (curveOrder < 1) {
 			curveOrder = 1;
 		}
-		ImGui::DragInt("B-spline resolution (u increment)", (int*)&uIncrement, 1);
+		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1);
 		if (uIncrement < 1) {
 			uIncrement = 1;
+		}
+
+
+		if(ImGui::Button("remove point")) {
+			removePoint = true;
 		}
 
 
