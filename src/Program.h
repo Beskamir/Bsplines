@@ -24,7 +24,7 @@ private:
 	GLFWwindow* window;
 	RenderEngine* renderEngine;
 
-	std::vector<Geometry*> geometryObjects;
+	std::vector<std::shared_ptr<Geometry>> geometryObjects;
 
 	bool show_test_window;
 	ImVec4 clear_color;
@@ -67,14 +67,14 @@ private:
 	int activePointIndex = 0;
 
 	// Geometry storage for b-splines
-	Geometry* controlPoints;
-	Geometry* activePoint;
-	Geometry* bsplineCurve;
-	Geometry* demoLines;
-	Geometry* demoPoint;
+	std::shared_ptr<Geometry> controlPoints;
+	std::shared_ptr<Geometry> activePoint;
+	std::shared_ptr<Geometry> bsplineCurve;
+	std::shared_ptr<Geometry> demoLines;
+	std::shared_ptr<Geometry> demoPoint;
 
 
-	glm::vec3 *mousePosition;
+	std::shared_ptr<glm::vec3> mousePosition;
 
 	ImVec4 lineColor;
 };

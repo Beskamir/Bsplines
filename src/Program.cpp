@@ -22,7 +22,7 @@ void Program::start() {
 
 	renderEngine = new RenderEngine(window);
 
-	mousePosition = new glm::vec3(0);
+	mousePosition = std::make_shared<glm::vec3>(0);
 
 	InputHandler::setUp(renderEngine, mousePosition);
 	mainLoop();
@@ -66,7 +66,7 @@ void Program::setupWindow() {
 
 // Creates an object from specified vertices - no texture. Default object is a 2D triangle.
 void Program::createTestGeometryObject() {
-	Geometry* testObject = new Geometry();
+	std::shared_ptr<Geometry> testObject = std::make_shared<Geometry>();
 
 	testObject->verts.push_back(glm::vec3(-5.f, -3.f, 0.f));
 	testObject->verts.push_back(glm::vec3(5.f, -3.f, 0.f));
@@ -77,7 +77,7 @@ void Program::createTestGeometryObject() {
 }
 
 void Program::createControlPoints() {
-	controlPoints = new Geometry();
+	controlPoints = std::make_shared<Geometry>();
 	controlPoints->drawMode = GL_POINTS;
 	renderEngine->assignBuffers(*controlPoints);
 	geometryObjects.push_back(controlPoints);
@@ -85,7 +85,7 @@ void Program::createControlPoints() {
 }
 
 void Program::createActivePoint() {
-	activePoint = new Geometry();
+	activePoint = std::make_shared<Geometry>();
 	activePoint->drawMode = GL_POINTS;
 	activePoint->color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	renderEngine->assignBuffers(*activePoint);
@@ -93,20 +93,20 @@ void Program::createActivePoint() {
 }
 
 void Program::createBsplineCurve() {
-	bsplineCurve = new Geometry();
+	bsplineCurve = std::make_shared<Geometry>();
 	renderEngine->assignBuffers(*bsplineCurve);
 	geometryObjects.push_back(bsplineCurve);
 }
 
 void Program::createDemoLines() {
-	demoLines = new Geometry();
+	demoLines = std::make_shared<Geometry>();
 	demoLines->color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 	renderEngine->assignBuffers(*demoLines);
 	geometryObjects.push_back(demoLines);
 }
 
 void Program::createDemoPoint() {
-	demoPoint = new Geometry();
+	demoPoint = std::make_shared<Geometry>();
 	demoPoint->drawMode = GL_POINTS;
 	demoPoint->color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 	renderEngine->assignBuffers(*demoPoint);

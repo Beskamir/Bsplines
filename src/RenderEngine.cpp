@@ -16,11 +16,11 @@ RenderEngine::RenderEngine(GLFWwindow* window) : window(window) {
 }
 
 // Called to render provided objects under view matrix
-void RenderEngine::render(const std::vector<Geometry*>& objects, glm::mat4 view) {
+void RenderEngine::render(const std::vector<std::shared_ptr<Geometry>>& objects, glm::mat4 view) {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glUseProgram(mainProgram);
 
-	for (const Geometry* o : objects) {
+	for (const std::shared_ptr<Geometry> o : objects) {
 		glBindVertexArray(o->vao);
 
 		glm::mat4 modelView = view * o->modelMatrix;

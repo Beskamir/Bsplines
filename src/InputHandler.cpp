@@ -3,10 +3,10 @@
 RenderEngine* InputHandler::renderEngine;
 int InputHandler::mouseOldX;
 int InputHandler::mouseOldY;
-glm::vec3* InputHandler::mousePos;
+std::shared_ptr<glm::vec3> InputHandler::mousePos;
 
 // Must be called before processing any GLFW events
-void InputHandler::setUp(RenderEngine* renderEngine, glm::vec3* pos) {
+void InputHandler::setUp(RenderEngine* renderEngine, std::shared_ptr<glm::vec3> pos) {
 	InputHandler::renderEngine = renderEngine;
 	InputHandler::mousePos = pos;
 }

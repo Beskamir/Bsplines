@@ -10,7 +10,7 @@
 class InputHandler {
 
 public:
-	static void setUp(RenderEngine* renderEngine, glm::vec3* pos);
+	static void setUp(RenderEngine* renderEngine, std::shared_ptr<glm::vec3> pos);
 
 	static void key(GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void mouse(GLFWwindow* window, int button, int action, int mods);
@@ -21,7 +21,7 @@ public:
 
 private:
 	static RenderEngine* renderEngine;
-	static glm::vec3* mousePos;
+	static std::shared_ptr<glm::vec3> mousePos;
 
 	static int mouseOldX;
 	static int mouseOldY;
