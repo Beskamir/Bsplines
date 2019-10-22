@@ -121,36 +121,9 @@ void Program::createDemoPoint() {
 }
 
 void Program::updateControlPoints() {
-	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
- //
-	// controlPoints->modelMatrix = glm::mat4(1.f);
-	// controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
-	// controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
- //
-	// if(mousePosition->z == 1) {
-	// 	int width, height;
- //
-	// 	// Boolean for catching just a single click
-	// 	mousePosition->z = 0;
- //
-	// 	// Convert screen res to screen space
-	// 	glfwGetWindowSize(window, &width, &height);
-	// 	glm::vec4 mousePosFix = glm::vec4(
-	// 		((mousePosition->x - (float)width / 2) / ((float)width / 2)) * 10 * (float)width / (float)height,
-	// 		(((float)height / 2 - mousePosition->y) / ((float)height / 2)) * 10,
-	// 		0.0f, 1.0f
-	// 	);
-	// 	std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
- //
-	// 	mousePosFix = glm::inverse(controlPoints->modelMatrix) * mousePosFix;
- //
-	// 	controlPoints->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
- //
-	// }
- //
- //
-	// renderEngine->updateBuffers(*controlPoints);
+
 }
+
 
 void Program::addControlPoint(glm::vec3 oldPoint) {
 	 controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
@@ -165,6 +138,49 @@ void Program::addControlPoint(glm::vec3 oldPoint) {
     renderEngine->updateBuffers(*controlPoints);
 }
 
+glm::vec3 Program::fixMousePoisiton() const {
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	glm::vec4 mousePosFix = glm::vec4(
+		((mousePosition->x - (float)width / 2) / ((float)width / 2)) * 10 * (float)width / (float)height,
+		(((float)height / 2 - mousePosition->y) / ((float)height / 2)) * 10,
+		0.0f, 1.0f
+	);
+	// std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
+
+	mousePosFix = glm::inverse(activePoint->modelMatrix) * mousePosFix;
+	return glm::vec3(mousePosFix.x, mousePosFix.y, 0);
+}
+
+void Program::addActivePoint() {
+
+	// Boolean for catching just a single click
+	mousePosition->z = 0;
+
+	// Convert screen res to screen space
+	const glm::vec3 mousePosFix = fixMousePoisiton();
+
+
+	if (activePoint->verts.empty()) {
+		addControlPoint(mousePosFix);
+		activePoint->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
+	}
+	else {
+		addControlPoint(mousePosFix);
+		activePoint->verts[0] = (mousePosFix);
+	}
+}
+
+void Program::selectControlPoint() {
+	// Convert screen res to screen space
+	const glm::vec3 mousePosFix = fixMousePoisiton();
+	for each (glm::vec3 point in controlPoints->verts) {
+		if(glm::distance(mousePosFix,point)<0.35f) {
+			activePoint->verts[0] = point;
+		}
+	}
+}
+
 void Program::updateActivePoint() {
 	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
@@ -173,29 +189,15 @@ void Program::updateActivePoint() {
 	activePoint->modelMatrix = glm::rotate(activePoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
 	if (mousePosition->z == 1) {
-		int width, height;
-
-		// Boolean for catching just a single click
+		selectControlPoint();
 		mousePosition->z = 0;
-
-		// Convert screen res to screen space
-		glfwGetWindowSize(window, &width, &height);
-		glm::vec4 mousePosFix = glm::vec4(
-			((mousePosition->x - (float)width / 2) / ((float)width / 2)) * 10 * (float)width / (float)height,
-			(((float)height / 2 - mousePosition->y) / ((float)height / 2)) * 10,
-			0.0f, 1.0f
-		);
-		std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
-
-		mousePosFix = glm::inverse(activePoint->modelMatrix) * mousePosFix;
-
-		if(activePoint->verts.empty()) {
-			activePoint->verts.emplace_back(glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
-		} else {
-			addControlPoint(activePoint->verts[0]);
-			activePoint->verts[0] = (glm::vec3(mousePosFix.x, mousePosFix.y, 0.f));
-		}
 	}
+
+	if (mousePosition->z == 2) {
+		addActivePoint();
+		mousePosition->z = 0;
+	}
+
 
 
 	renderEngine->updateBuffers(*activePoint);

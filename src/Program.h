@@ -45,8 +45,11 @@ private:
 
 	// Use the geometry pointers and fill them with relavent data
 	void addControlPoint(glm::vec3 oldPoint);
+	glm::vec3 fixMousePoisiton() const;
+	void addActivePoint();
 
 	void updateControlPoints();
+	void selectControlPoint();
 	void updateActivePoint();
 	void updateBsplineCurve();
 	void updateDemoLines();
