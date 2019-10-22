@@ -53,6 +53,7 @@ private:
 	void moveActivePoint();
 	void removeActivePoint();
 	void updateActivePoint();
+	int computeDelta(float uValue, int controlSize);
 	void updateBsplineCurve();
 	void updateDemoLines();
 	void updateDemoPoint();
@@ -60,8 +61,8 @@ private:
 	// Class variables for controlling the hypocycloid.
 	float rotation = 0;
 	float scale = 1;
-	int curveOrder = 1;
-	int uIncrement = 1;
+	int curveOrder = 2;
+	int uIncrement = 10;
 	bool removePoint = false;
 
 	int activePointIndex = 0;
@@ -73,6 +74,7 @@ private:
 	std::shared_ptr<Geometry> demoLines;
 	std::shared_ptr<Geometry> demoPoint;
 
+	std::vector<float> knots;
 
 	std::shared_ptr<glm::vec3> mousePosition;
 

@@ -234,8 +234,70 @@ void Program::updateActivePoint() {
 	renderEngine->updateBuffers(*activePoint);
 }
 
+int Program::computeDelta(float uValue, int controlSize) {
+	for (int i = 0; i < controlSize+curveOrder-1; ++i)	
+	{
+		if(uValue>=knots[i] && uValue<knots[i+1]){
+			return i;
+		}
+	}
+	return -1;
+}
+
 void Program::updateBsplineCurve() {
 	// TODO: algorithm to generate b-spline curve
+	// checks and preprocessing
+	if(controlPoints->verts.size()<curveOrder) { return; }
+	int controlSize = controlPoints->verts.size() - 1;
+	bsplineCurve->verts.clear();
+	knots.clear();
+	for (int i = 0; i < curveOrder-2; ++i)
+	{
+		knots.push_back(0);
+	}
+	for (int i = 0; i < controlPoints->verts.size()+1; ++i)
+	{
+		knots.push_back(i);
+	}
+	for (int i = 0; i < curveOrder-2; ++i)
+	{
+		knots.push_back(knots[knots.size() - 1]);
+	}
+	for (int knot : knots)
+	{
+		std::cout << knot << ",";
+	}
+	std::cout<<std::endl;
+	// Iterate through u values and generate curve
+	for (float u = 0; u <= knots[knots.size()-1]; u+=(1/(float)uIncrement)) 
+	{
+		// Get the value of which control points matter
+		int delta = computeDelta(u, controlSize);
+		if(delta<0) { return; }
+		// Get the contributing points
+		std::vector<glm::vec3> contributorPoints;
+		contributorPoints.reserve(curveOrder - 1);
+		for (int i = 0; i < curveOrder-1; ++i) 
+		{
+			contributorPoints.push_back(controlPoints->verts[delta - i]);
+		}
+		// Compute the curve
+		for (int r = curveOrder; r < 2; --r) 
+		{
+			int tempDelta = delta;
+			for (int s = 0; s < r-2; ++s)
+			{
+				float omega = (u - knots[tempDelta]) / knots[tempDelta + r - 1] - knots[tempDelta];
+				contributorPoints[s] = omega * contributorPoints[s] + (1 - omega)*contributorPoints[s + 1];
+				tempDelta--;
+			}
+		}
+		// std::cout << u << ": " << contributorPoints[0].x << ", "<< contributorPoints[0].y << std::endl;
+		bsplineCurve->verts.push_back(contributorPoints[0]);
+		renderEngine->updateBuffers(*bsplineCurve);
+	}
+	// if(!bsplineCurve->verts.empty()) {
+	// }
 }
 
 void Program::updateDemoLines() {
@@ -267,8 +329,8 @@ void Program::drawUI() {
 		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
 
 		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1);
-		if (curveOrder < 1) {
-			curveOrder = 1;
+		if (curveOrder < 2) {
+			curveOrder = 2;
 		}
 		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1);
 		if (uIncrement < 1) {
