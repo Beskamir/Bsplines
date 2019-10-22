@@ -23,23 +23,31 @@ void InputHandler::key(GLFWwindow* window, int key, int scancode, int action, in
 // Callback for mouse button presses
 void InputHandler::mouse(GLFWwindow* window, int button, int action, int mods) {
 	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_1) {
-		// std::cout << mouseOldX << ", " << mouseOldY << std::endl;
-		mousePos->x = mouseOldX;
-		mousePos->y = mouseOldY;
 		mousePos->z = 1.0f;
 	}
+	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_1) {
+		mousePos->z = 0.0f;
+	}
 	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_2) {
-		// std::cout << mouseOldX << ", " << mouseOldY << std::endl;
-		mousePos->x = mouseOldX;
-		mousePos->y = mouseOldY;
 		mousePos->z = 2.0f;
 	}
+	if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_3) {
+		mousePos->z = 3.0f;
+	}
+	if (action == GLFW_RELEASE && button == GLFW_MOUSE_BUTTON_3) {
+		mousePos->z = 0.0f;
+	}
+	// mousePos->x = mouseOldX;
+	// mousePos->y = mouseOldY;
 }
 
 // Callback for mouse motion
 void InputHandler::motion(GLFWwindow* window, double x, double y) {
 	mouseOldX = x;
 	mouseOldY = y;
+
+	mousePos->x = mouseOldX;
+	mousePos->y = mouseOldY;
 }
 
 // Callback for mouse scroll

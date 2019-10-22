@@ -132,8 +132,9 @@ void Program::addControlPoint(glm::vec3 oldPoint) {
     controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
     controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
-	controlPoints->verts.emplace_back(oldPoint);
+	activePointIndex = controlPoints->verts.size();
 
+	controlPoints->verts.emplace_back(oldPoint);
 
     renderEngine->updateBuffers(*controlPoints);
 }
@@ -171,14 +172,24 @@ void Program::addActivePoint() {
 	}
 }
 
-void Program::selectControlPoint() {
+bool Program::selectControlPoint() {
 	// Convert screen res to screen space
 	const glm::vec3 mousePosFix = fixMousePoisiton();
-	for each (glm::vec3 point in controlPoints->verts) {
-		if(glm::distance(mousePosFix,point)<0.35f) {
-			activePoint->verts[0] = point;
+	for (int i = 0; i < controlPoints->verts.size(); i++) {
+		if (glm::distance(mousePosFix, controlPoints->verts[i]) < 0.35f) {
+			activePoint->verts[0] = controlPoints->verts[i];
+			activePointIndex = i;
+			return true;
 		}
 	}
+	return false;
+}
+
+void Program::moveActivePoint() {
+	const glm::vec3 mousePosFix = fixMousePoisiton();
+	activePoint->verts[0] = mousePosFix;
+	controlPoints->verts[activePointIndex] = mousePosFix;
+	renderEngine->updateBuffers(*controlPoints);
 }
 
 void Program::updateActivePoint() {
@@ -188,18 +199,20 @@ void Program::updateActivePoint() {
 	activePoint->modelMatrix = glm::scale(activePoint->modelMatrix, glm::vec3(scale));
 	activePoint->modelMatrix = glm::rotate(activePoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
-	if (mousePosition->z == 1) {
-		selectControlPoint();
-		mousePosition->z = 0;
+	// Select and modify control points
+	if(mousePosition->z == 1) {
+		mousePosition->z = selectControlPoint() ? 11 : 0;
+	}
+	if (mousePosition->z == 11) {
+		moveActivePoint();
 	}
 
+	// Add new control points
 	if (mousePosition->z == 2) {
 		addActivePoint();
 		mousePosition->z = 0;
 	}
-
-
-
+	
 	renderEngine->updateBuffers(*activePoint);
 }
 

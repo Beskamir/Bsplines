@@ -49,7 +49,8 @@ private:
 	void addActivePoint();
 
 	void updateControlPoints();
-	void selectControlPoint();
+	bool selectControlPoint();
+	void moveActivePoint();
 	void updateActivePoint();
 	void updateBsplineCurve();
 	void updateDemoLines();
@@ -60,6 +61,8 @@ private:
 	float scale = 1;
 	int curveOrder = 1;
 	int uIncrement = 1;
+
+	int activePointIndex = 0;
 
 	// Geometry storage for b-splines
 	Geometry* controlPoints;
