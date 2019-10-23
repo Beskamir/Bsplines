@@ -31,6 +31,7 @@ private:
 
 	static void error(int error, const char* description);
 	void setupWindow();
+	void clearCurve();
 	void mainLoop();
 	void drawUI();
 
@@ -57,6 +58,7 @@ private:
 	glm::vec3 deBoorAlg(int delta, float uValue);
 	void createKnots();
 	void updateBsplineCurve();
+	void deBoorAlgShow(int delta);
 	void updateDemoLines();
 	void updateDemoPoint();
 

@@ -62,6 +62,15 @@ void Program::setupWindow() {
     ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
+void Program::clearCurve() {
+	bsplineCurve->verts.clear();
+	demoPoint->verts.clear();
+	demoLines->verts.clear();
+	renderEngine->updateBuffers(*bsplineCurve);
+	renderEngine->updateBuffers(*demoPoint);
+	renderEngine->updateBuffers(*demoLines);
+}
+
 // Creates an object from specified vertices - no texture. Default object is a 2D triangle.
 void Program::createTestGeometryObject() {
 	std::shared_ptr<Geometry> testObject = std::make_shared<Geometry>();
@@ -255,11 +264,6 @@ int Program::computeDelta(float &uValue) {
  	contributorPoints.reserve(curveOrder);
  	for (int i = 0; i < curveOrder; i++)
  	{
-		// int index = 
- 	// 	if(index >= controlPoints->verts.size())
- 	// 	{
-		// 	index = controlPoints->verts.size() - 1;
- 	// 	}
 		contributorPoints.push_back(controlPoints->verts[delta - i]);
  	}
 
@@ -304,13 +308,10 @@ void Program::updateBsplineCurve() {
 	// Create b-spline curve
 	// checks and preprocessing
 	// int controlSize = controlPoints->verts.size() - 1;
-	bsplineCurve->verts.clear();
 	bsplineCurve->modelMatrix = glm::mat4(1.f);
 	bsplineCurve->modelMatrix = glm::translate(bsplineCurve->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	bsplineCurve->modelMatrix = glm::scale(bsplineCurve->modelMatrix, glm::vec3(scale));
 	bsplineCurve->modelMatrix = glm::rotate(bsplineCurve->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
-
-	createKnots();
 
 	const int uIncTemp = uIncrement;
 	const float uOffset = (1.f / (float)uIncTemp);
@@ -330,12 +331,48 @@ void Program::updateBsplineCurve() {
 	renderEngine->updateBuffers(*bsplineCurve);
 }
 
+void Program::deBoorAlgShow(int delta) {
+	std::vector<glm::vec3> contributorPoints;
+	// float curveDegree = curveOrder - 1;
+	contributorPoints.reserve(curveOrder);
+	for (int i = 0; i < curveOrder; i++)
+	{
+		contributorPoints.push_back(controlPoints->verts[delta - i]);
+	}
+
+	for (int r = curveOrder; r >= 2; r--)
+	{
+		int i = delta;
+		for (int s = 0; s <= r - 2; s++)
+		{
+			float omega = (demoU - knots[i]) / (knots[i + r - 1] - knots[i]);
+			demoLines->verts.push_back(contributorPoints[s]);
+			demoLines->verts.push_back(contributorPoints[s+1]);
+			contributorPoints[s] = (omega * contributorPoints[s]) + ((1 - omega)*contributorPoints[s + 1]);
+			i--;
+		}
+	}
+
+	// contributorPoints[0];
+}
+
 void Program::updateDemoLines() {
 	// Todo: create lines to show bspline curve generation graphically
+	demoLines->modelMatrix = glm::mat4(1.f);
+	demoLines->modelMatrix = glm::translate(demoLines->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
+	demoLines->modelMatrix = glm::scale(demoLines->modelMatrix, glm::vec3(scale));
+	demoLines->modelMatrix = glm::rotate(demoLines->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+	// Get the index of the control point that matters
+	int delta = computeDelta(demoU);
+	if (delta < 0) { return; }
+	deBoorAlgShow(delta);
+
+	renderEngine->updateBuffers(*demoLines);
 }
 
 void Program::updateDemoPoint() {
-	// Todo: current u value
+	// draw the current u value as specified in the ui
 	// if (controlPoints->verts.size() < curveOrder) { return; }
 	// int controlSize = controlPoints->verts.size() - 1;
 	demoPoint->verts.clear();
@@ -343,7 +380,6 @@ void Program::updateDemoPoint() {
 	demoPoint->modelMatrix = glm::translate(demoPoint->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	demoPoint->modelMatrix = glm::scale(demoPoint->modelMatrix, glm::vec3(scale));
 	demoPoint->modelMatrix = glm::rotate(demoPoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
-
 
 	// Iterate through u values and generate curve
 	// Get the index of the control point that matters
@@ -371,22 +407,23 @@ void Program::drawUI() {
 
 		ImGui::ColorEdit3("clear color", (float*)&clear_color);
 		ImGui::ColorEdit4("line color", (float*)&lineColor);
-		
+
+		ImGui::Text("Transfromations:");
 		ImGui::DragFloat("rotation", (float*)&rotation, 0.1f);
 		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
 		ImGui::DragFloat2("translate the model", (float*)&translation, 0.01f);
 
-		
+		ImGui::Text("Curve parameters:");
 		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1,2,4096);
-		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1,10,10000);
-		ImGui::DragFloat("demo point", (float*)&demoU, 0.001, 0,1-0.0001);
+		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1,1,10000);
+		ImGui::DragFloat("demo point", (float*)&demoU, 0.001, 0,1);
 		
 		if(ImGui::Button("remove point")) {
 			removePoint = true;
 		}
 
 		ImGui::SameLine();
-		ImGui::Checkbox("Draw curve (might fix u increment bug)", (bool*)&drawCurve);
+		ImGui::Checkbox("Draw curve", (bool*)&drawCurve);
 
 
 		ImGui::End();
@@ -414,6 +451,7 @@ void Program::mainLoop() {
 		updateActivePoint();
 		updateControlPoints();
 
+		clearCurve();
 		if (controlPoints->verts.size() >= curveOrder && drawCurve) {
 			createKnots();
 			updateBsplineCurve();
