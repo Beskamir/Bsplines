@@ -251,36 +251,41 @@ void Program::updateBsplineCurve() {
 	int controlSize = controlPoints->verts.size() - 1;
 	bsplineCurve->verts.clear();
 	knots.clear();
-	for (int i = 0; i < curveOrder-2; ++i)
+	for (int i = 0; i < curveOrder-1; ++i)
 	{
 		knots.push_back(0);
 	}
-	for (int i = 0; i < controlPoints->verts.size()+1; ++i)
+	const float knotSpacing = (float)1/float(controlPoints->verts.size() - curveOrder + 1);
+	for (float i = 0; i < 1; i+=knotSpacing)
 	{
+		// const float denomiator = (i - curveOrder + 2);
+		// float knot = (denomiator == 0) ? 0 : 1 / denomiator;
 		knots.push_back(i);
+		std::cout << i << std::endl;
 	}
-	for (int i = 0; i < curveOrder-2; ++i)
+	for (int i = 0; i < curveOrder; ++i)
 	{
-		knots.push_back(knots[knots.size() - 1]);
+		knots.push_back(1);
 	}
-	for (int knot : knots)
+	for (float knot : knots)
 	{
 		std::cout << knot << ",";
 	}
 	std::cout<<std::endl;
 	// Iterate through u values and generate curve
-	for (float u = 0; u < knots[knots.size()-1]; u+=(1/(float)uIncrement)) 
+	float u = 0;
+	while (u < 1) 
 	{
 		// Get the value of which control points matter
 		int delta = computeDelta(u, controlSize);
-		if(delta<0) { return; }
+		// if(delta<0) { return; }
 		// delta -= (curveOrder - 2);
-		std::cout << "Delta: " << delta << std::endl;
+		// std::cout << "Delta: " << delta << std::endl;
 		std::cout << "u: " << u << std::endl;
 		// Get the contributing points
 		std::vector<glm::vec3> contributorPoints;
 		contributorPoints.reserve(curveOrder - 1);
-		for (int i = curveOrder-2; i < curveOrder-1; ++i) 
+		for (int i = 0; i < curveOrder-1; ++i) 
 		{
 			contributorPoints.push_back(controlPoints->verts[delta - i]);
 		}
@@ -291,7 +296,7 @@ void Program::updateBsplineCurve() {
 			for (int s = 0; s < r-2; ++s)
 			{
 				float omega = (u - knots[tempDelta]) / knots[tempDelta + r - 1] - knots[tempDelta];
-				std::cout << "Omega: "<< omega << std::endl;
+				// std::cout << "Omega: "<< omega << std::endl;
 				contributorPoints[s] = omega * contributorPoints[s] + (1 - omega)*contributorPoints[s + 1];
 				tempDelta--;
 			}
@@ -299,6 +304,7 @@ void Program::updateBsplineCurve() {
 		// std::cout << u << ": " << contributorPoints[0].x << ", "<< contributorPoints[0].y << std::endl;
 		bsplineCurve->verts.push_back(contributorPoints[0]);
 		renderEngine->updateBuffers(*bsplineCurve);
+		u += (1 / (float)uIncrement);
 	}
 	// if(!bsplineCurve->verts.empty()) {
 	// }

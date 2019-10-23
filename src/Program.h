@@ -62,7 +62,7 @@ private:
 	float rotation = 0;
 	float scale = 1;
 	int curveOrder = 2;
-	int uIncrement = 10;
+	int uIncrement = 50;
 	bool removePoint = false;
 
 	int activePointIndex = 0;
