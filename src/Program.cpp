@@ -280,17 +280,18 @@ void Program::updateBsplineCurve() {
 		// Get the contributing points
 		std::vector<glm::vec3> contributorPoints;
 		contributorPoints.reserve(curveOrder - 1);
-		for (int i = 0; i < curveOrder-1; ++i) 
+		for (int i = curveOrder-2; i < curveOrder-1; ++i) 
 		{
 			contributorPoints.push_back(controlPoints->verts[delta - i]);
 		}
 		// Compute the curve
-		for (int r = curveOrder; r < 2; --r) 
+		for (int r = curveOrder; r > 2; --r) 
 		{
 			int tempDelta = delta;
 			for (int s = 0; s < r-2; ++s)
 			{
 				float omega = (u - knots[tempDelta]) / knots[tempDelta + r - 1] - knots[tempDelta];
+				std::cout << "Omega: "<< omega << std::endl;
 				contributorPoints[s] = omega * contributorPoints[s] + (1 - omega)*contributorPoints[s + 1];
 				tempDelta--;
 			}
