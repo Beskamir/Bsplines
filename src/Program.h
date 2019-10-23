@@ -53,7 +53,9 @@ private:
 	void moveActivePoint();
 	void removeActivePoint();
 	void updateActivePoint();
-	int computeDelta(float uValue, int controlSize);
+	int computeDelta(float uValue);
+	glm::vec3 deBoorAlg(int delta, float uValue);
+	void createKnots();
 	void updateBsplineCurve();
 	void updateDemoLines();
 	void updateDemoPoint();
@@ -62,7 +64,7 @@ private:
 	float rotation = 0;
 	float scale = 1;
 	int curveOrder = 2;
-	int uIncrement = 50;
+	int uIncrement = 100;
 	bool removePoint = false;
 
 	int activePointIndex = 0;

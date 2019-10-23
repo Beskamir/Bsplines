@@ -234,75 +234,109 @@ void Program::updateActivePoint() {
 	renderEngine->updateBuffers(*activePoint);
 }
 
-int Program::computeDelta(float uValue, int controlSize) {
-	for (int i = 0; i < controlSize+curveOrder-1; ++i)	
+int Program::computeDelta(float uValue) {
+	for (int i = 0; i < controlPoints->verts.size()+curveOrder; ++i)	
 	{
 		if(uValue>=knots[i] && uValue<knots[i+1]){
+			// std::cout << uValue << ":" << i << ":" << knots[i] << std::endl;
 			return i;
 		}
 	}
 	return -1;
 }
 
-void Program::updateBsplineCurve() {
-	// TODO: algorithm to generate b-spline curve
-	// checks and preprocessing
-	if(controlPoints->verts.size()<curveOrder) { return; }
-	int controlSize = controlPoints->verts.size() - 1;
-	bsplineCurve->verts.clear();
-	knots.clear();
-	for (int i = 0; i < curveOrder-1; ++i)
+// glm::vec3 Program::deBoorAlg(int delta, float uValue){
+// 	std::vector<glm::vec3> contributorPoints;
+// 	float curveDegree = curveOrder - 1;
+// 	contributorPoints.reserve(curveOrder);
+// 	for (int i = 0; i < curveOrder; i++)
+// 	{
+// 		contributorPoints.push_back(controlPoints->verts[i + delta - curveDegree]);
+// 	}
+//
+// 	for (int r = 1; r < curveOrder; r++)
+// 	{
+// 		for (int j = 0; j < r-1; j--)
+// 		{
+// 			float knot1 = knots[j + delta - curveDegree];
+// 			float knot2 = knots[j + 1 + delta - r];
+// 			float knot3 = knots[j + delta - curveDegree];
+// 			float alpha = (uValue - knot1)  /  (knot2 - knot3);
+// 			contributorPoints[j] = (1-alpha) * contributorPoints[j - 1] + alpha * contributorPoints[j];
+// 		}
+// 	}
+// 	return contributorPoints[curveDegree];
+//
+// }
+
+ glm::vec3 Program::deBoorAlg(int delta, float uValue){
+ 	std::vector<glm::vec3> contributorPoints;
+ 	// float curveDegree = curveOrder - 1;
+ 	contributorPoints.reserve(curveOrder);
+ 	for (int i = 0; i < curveOrder; i++)
+ 	{
+		int index = delta - i;
+ 		if(index >= controlPoints->verts.size())
+ 		{
+			index = controlPoints->verts.size() - 1;
+ 		}
+ 		contributorPoints.push_back(controlPoints->verts[index]);
+ 	}
+
+	for (int r = curveOrder; r > 2; r--)
 	{
+		int i = delta;
+		for (int s = 0; s < r-2; s++)
+		{
+			float omega = (uValue - knots[i]) / (knots[i + r - 1] - knots[i]);
+			contributorPoints[s] = (omega * contributorPoints[s]) + ((1 - omega)*contributorPoints[s + 1]);
+			i--;
+		}
+	}
+
+ 	return contributorPoints[0];
+ }
+
+void Program::createKnots(){
+	knots.clear();
+	for (int i = 0; i < curveOrder - 1; ++i) {
 		knots.push_back(0);
 	}
-	const float knotSpacing = (float)1/float(controlPoints->verts.size() - curveOrder + 1);
-	for (float i = 0; i < 1; i+=knotSpacing)
-	{
-		// const float denomiator = (i - curveOrder + 2);
-		// float knot = (denomiator == 0) ? 0 : 1 / denomiator;
+	const float knotSpacing = 1.f / float(controlPoints->verts.size() - curveOrder + 2);
+	for (float i = 0; i <= 1; i += knotSpacing) {
 		knots.push_back(i);
-		std::cout << i << std::endl;
 	}
-	for (int i = 0; i < curveOrder; ++i)
+	for (int i = 0; i < curveOrder - 1; ++i)
 	{
 		knots.push_back(1);
 	}
+	std::cout << "Knots: ";
 	for (float knot : knots)
 	{
 		std::cout << knot << ",";
 	}
-	std::cout<<std::endl;
+	std::cout << std::endl;
+}
+
+
+void Program::updateBsplineCurve() {
+	// TODO: algorithm to generate b-spline curve
+	// checks and preprocessing
+	if(controlPoints->verts.size()<curveOrder) { return; }
+	// int controlSize = controlPoints->verts.size() - 1;
+	bsplineCurve->verts.clear();
+
+	createKnots();
+
 	// Iterate through u values and generate curve
-	float u = 0;
-	while (u < 1) 
+	float u = knots[curveOrder - 1];
+	while (u <= 1) 
 	{
-		// Get the value of which control points matter
-		int delta = computeDelta(u, controlSize);
-		// if(delta<0) { return; }
-		// delta -= (curveOrder - 2);
-		// std::cout << "Delta: " << delta << std::endl;
-		std::cout << "u: " << u << std::endl;
-		// Get the contributing points
-		std::vector<glm::vec3> contributorPoints;
-		contributorPoints.reserve(curveOrder - 1);
-		for (int i = 0; i < curveOrder-1; ++i) 
-		{
-			contributorPoints.push_back(controlPoints->verts[delta - i]);
-		}
-		// Compute the curve
-		for (int r = curveOrder; r > 2; --r) 
-		{
-			int tempDelta = delta;
-			for (int s = 0; s < r-2; ++s)
-			{
-				float omega = (u - knots[tempDelta]) / knots[tempDelta + r - 1] - knots[tempDelta];
-				// std::cout << "Omega: "<< omega << std::endl;
-				contributorPoints[s] = omega * contributorPoints[s] + (1 - omega)*contributorPoints[s + 1];
-				tempDelta--;
-			}
-		}
-		// std::cout << u << ": " << contributorPoints[0].x << ", "<< contributorPoints[0].y << std::endl;
-		bsplineCurve->verts.push_back(contributorPoints[0]);
+		// Get the index of the control point that matters
+		int delta = computeDelta(u);
+		if(delta<0) { return; }
+		std::cout << "Delta: " << delta << std::endl;
+		bsplineCurve->verts.push_back(deBoorAlg(delta,u));
 		renderEngine->updateBuffers(*bsplineCurve);
 		u += (1 / (float)uIncrement);
 	}
