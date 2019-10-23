@@ -108,6 +108,7 @@ void Program::createBsplineCurve() {
 
 void Program::createDemoLines() {
 	demoLines = std::make_shared<Geometry>();
+	demoLines->drawMode = GL_LINES;
 	demoLines->color = glm::vec4(0.25f, 0.25f, 1.0f, 1.0f);
 	renderEngine->assignBuffers(*demoLines);
 	geometryObjects.push_back(demoLines);
@@ -437,7 +438,7 @@ void Program::drawUI() {
 			removePoint = true;
 
 			// Fix the curve order to match how many control points are left
-			if(curveOrder > controlPointSave.size()-1)
+			if(curveOrder > controlPointSave.size()-1 && curveOrder>2)
 			{
 				curveOrder = controlPointSave.size()-1;
 			}
