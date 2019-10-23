@@ -1,7 +1,5 @@
 #include "Program.h"
 
-// float Program::offset[] = { 0,0 };
-
 Program::Program() {
 	window = nullptr;
 	renderEngine = nullptr;
@@ -275,18 +273,18 @@ int Program::computeDelta(float uValue) {
  	contributorPoints.reserve(curveOrder);
  	for (int i = 0; i < curveOrder; i++)
  	{
-		int index = delta - i;
- 		if(index >= controlPoints->verts.size())
- 		{
-			index = controlPoints->verts.size() - 1;
- 		}
- 		contributorPoints.push_back(controlPoints->verts[index]);
+		// int index = 
+ 	// 	if(index >= controlPoints->verts.size())
+ 	// 	{
+		// 	index = controlPoints->verts.size() - 1;
+ 	// 	}
+		contributorPoints.push_back(controlPoints->verts[delta - i]);
  	}
 
-	for (int r = curveOrder; r > 2; r--)
+	for (int r = curveOrder; r >= 2; r--)
 	{
 		int i = delta;
-		for (int s = 0; s < r-2; s++)
+		for (int s = 0; s <= r-2; s++)
 		{
 			float omega = (uValue - knots[i]) / (knots[i + r - 1] - knots[i]);
 			contributorPoints[s] = (omega * contributorPoints[s]) + ((1 - omega)*contributorPoints[s + 1]);
@@ -302,7 +300,7 @@ void Program::createKnots(){
 	for (int i = 0; i < curveOrder - 1; ++i) {
 		knots.push_back(0);
 	}
-	const float knotSpacing = 1.f / float(controlPoints->verts.size() - curveOrder + 2);
+	const float knotSpacing = 1.f / float(controlPoints->verts.size() - curveOrder + 1);
 	for (float i = 0; i <= 1; i += knotSpacing) {
 		knots.push_back(i);
 	}
@@ -335,13 +333,12 @@ void Program::updateBsplineCurve() {
 		// Get the index of the control point that matters
 		int delta = computeDelta(u);
 		if(delta<0) { return; }
-		std::cout << "Delta: " << delta << std::endl;
+		// std::cout << "Delta: " << delta << std::endl;
+		// Calculate the point on the curve
 		bsplineCurve->verts.push_back(deBoorAlg(delta,u));
 		renderEngine->updateBuffers(*bsplineCurve);
 		u += (1 / (float)uIncrement);
 	}
-	// if(!bsplineCurve->verts.empty()) {
-	// }
 }
 
 void Program::updateDemoLines() {
