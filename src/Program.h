@@ -76,7 +76,7 @@ private:
 	bool removePoint = false;
 	bool drawCurve = true;
 	bool drawPoints = true;
-	bool drawDemos = true;
+	bool drawDemos = false;
 
 	float demoU = 0;
 	

@@ -86,7 +86,7 @@ void Program::createTestGeometryObject() {
 void Program::createControlPoints() {
 	controlPoints = std::make_shared<Geometry>();
 	controlPoints->drawMode = GL_POINTS;
-	controlPoints->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	controlPoints->color = glm::vec4(0.75f, 0.75f, 0.75f, 1.0f);
 	renderEngine->assignBuffers(*controlPoints);
 	geometryObjects.push_back(controlPoints);
 
@@ -108,7 +108,7 @@ void Program::createBsplineCurve() {
 
 void Program::createDemoLines() {
 	demoLines = std::make_shared<Geometry>();
-	demoLines->color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+	demoLines->color = glm::vec4(0.25f, 0.25f, 1.0f, 1.0f);
 	renderEngine->assignBuffers(*demoLines);
 	geometryObjects.push_back(demoLines);
 }
@@ -374,7 +374,7 @@ void Program::deBoorAlgShow(int delta) {
 }
 
 void Program::updateDemoLines() {
-	// Todo: create lines to show bspline curve generation graphically
+	// create lines to show bspline curve generation graphically/visibly
 	demoLines->modelMatrix = glm::mat4(1.f);
 	demoLines->modelMatrix = glm::translate(demoLines->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	demoLines->modelMatrix = glm::scale(demoLines->modelMatrix, glm::vec3(scale));
