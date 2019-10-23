@@ -31,7 +31,7 @@ private:
 
 	static void error(int error, const char* description);
 	void setupWindow();
-	void clearCurve();
+
 	void mainLoop();
 	void drawUI();
 
@@ -45,15 +45,19 @@ private:
 	void createDemoPoint();
 
 	// Use the geometry pointers and fill them with relavent data
+	// Methods for controlling the control points
+	void savePoints();
+	void resetPoints();
 	void addControlPoint(glm::vec3 oldPoint);
 	glm::vec3 fixMousePoisiton() const;
 	void addActivePoint();
-
 	void updateControlPoints();
 	bool selectControlPoint();
 	void moveActivePoint();
 	void removeActivePoint();
 	void updateActivePoint();
+	// Methods for controlling the resulting curves
+	void clearCurve();
 	int computeDelta(float &uValue);
 	glm::vec3 deBoorAlg(int delta, float uValue);
 	void createKnots();
@@ -71,6 +75,8 @@ private:
 	int uIncrement = 100;
 	bool removePoint = false;
 	bool drawCurve = true;
+	bool drawPoints = true;
+	bool drawDemos = true;
 
 	float demoU = 0;
 	
@@ -82,6 +88,9 @@ private:
 	std::shared_ptr<Geometry> bsplineCurve;
 	std::shared_ptr<Geometry> demoLines;
 	std::shared_ptr<Geometry> demoPoint;
+
+	std::vector<glm::vec3> controlPointSave;
+	std::vector<glm::vec3> activePointSave;
 
 	std::vector<float> knots;
 

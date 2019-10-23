@@ -86,6 +86,7 @@ void Program::createTestGeometryObject() {
 void Program::createControlPoints() {
 	controlPoints = std::make_shared<Geometry>();
 	controlPoints->drawMode = GL_POINTS;
+	controlPoints->color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	renderEngine->assignBuffers(*controlPoints);
 	geometryObjects.push_back(controlPoints);
 
@@ -120,8 +121,26 @@ void Program::createDemoPoint() {
 	geometryObjects.push_back(demoPoint);
 }
 
+void Program::savePoints() {
+	// Save the control points
+	controlPointSave.clear();
+	controlPointSave = controlPoints->verts;
+	// Save the active point
+	activePointSave.clear();
+	activePointSave = activePoint->verts;
+}
+
+
+void Program::resetPoints() {
+	// Clear points from the screen
+	controlPoints->verts.clear();
+	renderEngine->updateBuffers(*controlPoints);
+	activePoint->verts.clear();
+	renderEngine->updateBuffers(*activePoint);
+}
+
 void Program::updateControlPoints() {
-	controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
+	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
 	controlPoints->modelMatrix = glm::mat4(1.f);
 	controlPoints->modelMatrix = glm::translate(controlPoints->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
@@ -244,11 +263,10 @@ void Program::updateActivePoint() {
 }
 
 int Program::computeDelta(float &uValue) {
-	for (int i = 0; i < controlPoints->verts.size()+curveOrder; ++i)	
+	for (int i = 0; i < controlPointSave.size()+curveOrder; ++i)	
 	{
 		if(uValue>=1.0f) {
 			uValue = 1.0f-0.00001;
-			// return controlPoints->verts.size()-1;
 		}
 		if(uValue>=knots[i] && uValue<knots[i+1]){
 			// std::cout << uValue << ":" << i << ":" << knots[i] << std::endl;
@@ -264,7 +282,7 @@ int Program::computeDelta(float &uValue) {
  	contributorPoints.reserve(curveOrder);
  	for (int i = 0; i < curveOrder; i++)
  	{
-		contributorPoints.push_back(controlPoints->verts[delta - i]);
+		contributorPoints.push_back(controlPointSave[delta - i]);
  	}
 
 	for (int r = curveOrder; r >= 2; r--)
@@ -282,12 +300,11 @@ int Program::computeDelta(float &uValue) {
  }
 
 void Program::createKnots(){
-	// if (controlPoints->verts.size() < curveOrder) { return; }
 	knots.clear();
 	for (int i = 0; i < curveOrder - 1; ++i) {
 		knots.push_back(0);
 	}
-	const float knotSpacing = 1.f / float(controlPoints->verts.size() - curveOrder + 1);
+	const float knotSpacing = 1.f / float(controlPointSave.size() - curveOrder + 1);
 	for (float i = 0; i <= 1; i += knotSpacing) {
 		knots.push_back(i);
 	}
@@ -307,7 +324,7 @@ void Program::createKnots(){
 void Program::updateBsplineCurve() {
 	// Create b-spline curve
 	// checks and preprocessing
-	// int controlSize = controlPoints->verts.size() - 1;
+	bsplineCurve->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 	bsplineCurve->modelMatrix = glm::mat4(1.f);
 	bsplineCurve->modelMatrix = glm::translate(bsplineCurve->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	bsplineCurve->modelMatrix = glm::scale(bsplineCurve->modelMatrix, glm::vec3(scale));
@@ -337,7 +354,7 @@ void Program::deBoorAlgShow(int delta) {
 	contributorPoints.reserve(curveOrder);
 	for (int i = 0; i < curveOrder; i++)
 	{
-		contributorPoints.push_back(controlPoints->verts[delta - i]);
+		contributorPoints.push_back(controlPointSave[delta - i]);
 	}
 
 	for (int r = curveOrder; r >= 2; r--)
@@ -346,8 +363,8 @@ void Program::deBoorAlgShow(int delta) {
 		for (int s = 0; s <= r - 2; s++)
 		{
 			float omega = (demoU - knots[i]) / (knots[i + r - 1] - knots[i]);
-			demoLines->verts.push_back(contributorPoints[s]);
 			demoLines->verts.push_back(contributorPoints[s+1]);
+			demoLines->verts.push_back(contributorPoints[s]);
 			contributorPoints[s] = (omega * contributorPoints[s]) + ((1 - omega)*contributorPoints[s + 1]);
 			i--;
 		}
@@ -373,8 +390,6 @@ void Program::updateDemoLines() {
 
 void Program::updateDemoPoint() {
 	// draw the current u value as specified in the ui
-	// if (controlPoints->verts.size() < curveOrder) { return; }
-	// int controlSize = controlPoints->verts.size() - 1;
 	demoPoint->verts.clear();
 	demoPoint->modelMatrix = glm::mat4(1.f);
 	demoPoint->modelMatrix = glm::translate(demoPoint->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
@@ -414,16 +429,28 @@ void Program::drawUI() {
 		ImGui::DragFloat2("translate the model", (float*)&translation, 0.01f);
 
 		ImGui::Text("Curve parameters:");
-		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1,2,4096);
+		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1,2,controlPointSave.size());
 		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1,1,10000);
 		ImGui::DragFloat("demo point", (float*)&demoU, 0.001, 0,1);
 		
 		if(ImGui::Button("remove point")) {
 			removePoint = true;
+
+			// Fix the curve order to match how many control points are left
+			if(curveOrder > controlPointSave.size()-1)
+			{
+				curveOrder = controlPointSave.size()-1;
+			}
 		}
 
 		ImGui::SameLine();
 		ImGui::Checkbox("Draw curve", (bool*)&drawCurve);
+
+		ImGui::SameLine();
+		ImGui::Checkbox("Draw control points", (bool*)&drawPoints);
+
+		ImGui::SameLine();
+		ImGui::Checkbox("Draw demo point/geometry", (bool*)&drawDemos);
 
 
 		ImGui::End();
@@ -448,15 +475,23 @@ void Program::mainLoop() {
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		updateActivePoint();
-		updateControlPoints();
+		resetPoints();
+		if(drawPoints) {
+			controlPoints->verts = controlPointSave;
+			activePoint->verts = activePointSave;
+			updateActivePoint();
+			updateControlPoints();
+			savePoints();
+		}
 
 		clearCurve();
-		if (controlPoints->verts.size() >= curveOrder && drawCurve) {
+		if (controlPointSave.size() >= curveOrder && drawCurve) {
 			createKnots();
 			updateBsplineCurve();
-			updateDemoLines();
-			updateDemoPoint();
+			if(drawDemos) {
+				updateDemoLines();
+				updateDemoPoint();
+			}
 		}
 		
 		drawUI();
