@@ -53,7 +53,7 @@ private:
 	void moveActivePoint();
 	void removeActivePoint();
 	void updateActivePoint();
-	int computeDelta(float uValue);
+	int computeDelta(float &uValue);
 	glm::vec3 deBoorAlg(int delta, float uValue);
 	void createKnots();
 	void updateBsplineCurve();
@@ -63,10 +63,15 @@ private:
 	// Class variables for controlling the hypocycloid.
 	float rotation = 0;
 	float scale = 1;
+	float translation[2] = { 0, 0 };
+	
 	int curveOrder = 2;
 	int uIncrement = 100;
 	bool removePoint = false;
+	bool drawCurve = true;
 
+	float demoU = 0;
+	
 	int activePointIndex = 0;
 
 	// Geometry storage for b-splines

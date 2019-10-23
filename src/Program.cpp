@@ -115,6 +115,7 @@ void Program::updateControlPoints() {
 	controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
 	controlPoints->modelMatrix = glm::mat4(1.f);
+	controlPoints->modelMatrix = glm::translate(controlPoints->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	controlPoints->modelMatrix = glm::scale(controlPoints->modelMatrix, glm::vec3(scale));
 	controlPoints->modelMatrix = glm::rotate(controlPoints->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
@@ -207,6 +208,7 @@ void Program::updateActivePoint() {
 	// controlPoints->color = glm::vec4(lineColor.x, lineColor.y, lineColor.z, lineColor.w);
 
 	activePoint->modelMatrix = glm::mat4(1.f);
+	activePoint->modelMatrix = glm::translate(activePoint->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
 	activePoint->modelMatrix = glm::scale(activePoint->modelMatrix, glm::vec3(scale));
 	activePoint->modelMatrix = glm::rotate(activePoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
@@ -232,9 +234,13 @@ void Program::updateActivePoint() {
 	renderEngine->updateBuffers(*activePoint);
 }
 
-int Program::computeDelta(float uValue) {
+int Program::computeDelta(float &uValue) {
 	for (int i = 0; i < controlPoints->verts.size()+curveOrder; ++i)	
 	{
+		if(uValue>=1.0f) {
+			uValue = 1.0f-0.00001;
+			// return controlPoints->verts.size()-1;
+		}
 		if(uValue>=knots[i] && uValue<knots[i+1]){
 			// std::cout << uValue << ":" << i << ":" << knots[i] << std::endl;
 			return i;
@@ -242,30 +248,6 @@ int Program::computeDelta(float uValue) {
 	}
 	return -1;
 }
-
-// glm::vec3 Program::deBoorAlg(int delta, float uValue){
-// 	std::vector<glm::vec3> contributorPoints;
-// 	float curveDegree = curveOrder - 1;
-// 	contributorPoints.reserve(curveOrder);
-// 	for (int i = 0; i < curveOrder; i++)
-// 	{
-// 		contributorPoints.push_back(controlPoints->verts[i + delta - curveDegree]);
-// 	}
-//
-// 	for (int r = 1; r < curveOrder; r++)
-// 	{
-// 		for (int j = 0; j < r-1; j--)
-// 		{
-// 			float knot1 = knots[j + delta - curveDegree];
-// 			float knot2 = knots[j + 1 + delta - r];
-// 			float knot3 = knots[j + delta - curveDegree];
-// 			float alpha = (uValue - knot1)  /  (knot2 - knot3);
-// 			contributorPoints[j] = (1-alpha) * contributorPoints[j - 1] + alpha * contributorPoints[j];
-// 		}
-// 	}
-// 	return contributorPoints[curveDegree];
-//
-// }
 
  glm::vec3 Program::deBoorAlg(int delta, float uValue){
  	std::vector<glm::vec3> contributorPoints;
@@ -296,6 +278,7 @@ int Program::computeDelta(float uValue) {
  }
 
 void Program::createKnots(){
+	// if (controlPoints->verts.size() < curveOrder) { return; }
 	knots.clear();
 	for (int i = 0; i < curveOrder - 1; ++i) {
 		knots.push_back(0);
@@ -308,37 +291,43 @@ void Program::createKnots(){
 	{
 		knots.push_back(1);
 	}
-	std::cout << "Knots: ";
-	for (float knot : knots)
-	{
-		std::cout << knot << ",";
-	}
-	std::cout << std::endl;
+	// std::cout << "Knots: ";
+	// for (float knot : knots)
+	// {
+	// 	std::cout << knot << ",";
+	// }
+	// std::cout << std::endl;
 }
 
 
 void Program::updateBsplineCurve() {
-	// TODO: algorithm to generate b-spline curve
+	// Create b-spline curve
 	// checks and preprocessing
-	if(controlPoints->verts.size()<curveOrder) { return; }
 	// int controlSize = controlPoints->verts.size() - 1;
 	bsplineCurve->verts.clear();
+	bsplineCurve->modelMatrix = glm::mat4(1.f);
+	bsplineCurve->modelMatrix = glm::translate(bsplineCurve->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
+	bsplineCurve->modelMatrix = glm::scale(bsplineCurve->modelMatrix, glm::vec3(scale));
+	bsplineCurve->modelMatrix = glm::rotate(bsplineCurve->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
 
 	createKnots();
 
+	const int uIncTemp = uIncrement;
+	const float uOffset = (1.f / (float)uIncTemp);
+	bsplineCurve->verts.reserve(uIncTemp);
 	// Iterate through u values and generate curve
 	float u = knots[curveOrder - 1];
-	while (u <= 1) 
+	for (int i = 0; i <= uIncTemp; i++)
 	{
 		// Get the index of the control point that matters
 		int delta = computeDelta(u);
-		if(delta<0) { return; }
+		if (delta < 0) { return; }
 		// std::cout << "Delta: " << delta << std::endl;
 		// Calculate the point on the curve
-		bsplineCurve->verts.push_back(deBoorAlg(delta,u));
-		renderEngine->updateBuffers(*bsplineCurve);
-		u += (1 / (float)uIncrement);
+		bsplineCurve->verts.push_back(deBoorAlg(delta, u));
+		u += uOffset;
 	}
+	renderEngine->updateBuffers(*bsplineCurve);
 }
 
 void Program::updateDemoLines() {
@@ -347,6 +336,23 @@ void Program::updateDemoLines() {
 
 void Program::updateDemoPoint() {
 	// Todo: current u value
+	// if (controlPoints->verts.size() < curveOrder) { return; }
+	// int controlSize = controlPoints->verts.size() - 1;
+	demoPoint->verts.clear();
+	demoPoint->modelMatrix = glm::mat4(1.f);
+	demoPoint->modelMatrix = glm::translate(demoPoint->modelMatrix, glm::vec3(translation[0], translation[1], 0.0f));
+	demoPoint->modelMatrix = glm::scale(demoPoint->modelMatrix, glm::vec3(scale));
+	demoPoint->modelMatrix = glm::rotate(demoPoint->modelMatrix, glm::radians(rotation), glm::vec3(0, 0, 1.0f));
+
+
+	// Iterate through u values and generate curve
+	// Get the index of the control point that matters
+	int delta = computeDelta(demoU);
+	if (delta < 0) { return; }
+	// std::cout << "Delta: " << delta << std::endl;
+	// Calculate the point on the curve
+	demoPoint->verts.push_back(deBoorAlg(delta, demoU));
+	renderEngine->updateBuffers(*demoPoint);
 }
 
 
@@ -368,19 +374,19 @@ void Program::drawUI() {
 		
 		ImGui::DragFloat("rotation", (float*)&rotation, 0.1f);
 		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
+		ImGui::DragFloat2("translate the model", (float*)&translation, 0.01f);
 
-		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1);
-		if (curveOrder < 2) {
-			curveOrder = 2;
-		}
-		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1);
-		if (uIncrement < 1) {
-			uIncrement = 1;
-		}
-
+		
+		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1,2,4096);
+		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1,10,10000);
+		ImGui::DragFloat("demo point", (float*)&demoU, 0.001, 0,1-0.0001);
+		
 		if(ImGui::Button("remove point")) {
 			removePoint = true;
 		}
+
+		ImGui::SameLine();
+		ImGui::Checkbox("Draw curve (might fix u increment bug)", (bool*)&drawCurve);
 
 
 		ImGui::End();
@@ -407,10 +413,14 @@ void Program::mainLoop() {
 
 		updateActivePoint();
 		updateControlPoints();
-		updateBsplineCurve();
-		updateDemoLines();
-		updateDemoPoint();
 
+		if (controlPoints->verts.size() >= curveOrder && drawCurve) {
+			createKnots();
+			updateBsplineCurve();
+			updateDemoLines();
+			updateDemoPoint();
+		}
+		
 		drawUI();
 
 		// Rendering
