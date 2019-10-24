@@ -62,6 +62,13 @@ void Program::setupWindow() {
     ImGui_ImplOpenGL3_Init(glsl_version);
 }
 
+void Program::clearKnots() {
+	knotsRender->verts.clear();
+	activeKnot->verts.clear();
+	renderEngine->updateBuffers(*knotsRender);
+	renderEngine->updateBuffers(*activeKnot);
+}
+
 void Program::clearCurve() {
 	bsplineCurve->verts.clear();
 	demoPoint->verts.clear();
@@ -158,7 +165,7 @@ void Program::addControlPoint(glm::vec3 oldPoint) {
 	controlPoints->verts.emplace_back(oldPoint);
 }
 
-glm::vec3 Program::fixMousePoisiton() const {
+glm::vec4 Program::fixMousePoisiton() const {
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
 	glm::vec4 mousePosFix = glm::vec4(
@@ -167,9 +174,8 @@ glm::vec3 Program::fixMousePoisiton() const {
 		0.0f, 1.0f
 	);
 	// std::cout << mousePosFix.x << "," << mousePosFix.y << std::endl;
+	return mousePosFix;
 
-	mousePosFix = glm::inverse(activePoint->modelMatrix) * mousePosFix;
-	return glm::vec3(mousePosFix.x, mousePosFix.y, 0);
 }
 
 void Program::addActivePoint() {
@@ -178,7 +184,8 @@ void Program::addActivePoint() {
 	mousePosition->z = 0;
 
 	// Convert screen res to screen space
-	const glm::vec3 mousePosFix = fixMousePoisiton();
+	const glm::vec4 tempMousePosFix = glm::inverse(activePoint->modelMatrix) * fixMousePoisiton();
+	const glm::vec3 mousePosFix = glm::vec3(tempMousePosFix.x, tempMousePosFix.y, 0);
 
 
 	if (activePoint->verts.empty()) {
@@ -193,7 +200,8 @@ void Program::addActivePoint() {
 
 bool Program::selectControlPoint() {
 	// Convert screen res to screen space
-	const glm::vec3 mousePosFix = fixMousePoisiton();
+	const glm::vec4 tempMousePosFix = glm::inverse(activePoint->modelMatrix) * fixMousePoisiton();
+	const glm::vec3 mousePosFix = glm::vec3(tempMousePosFix.x, tempMousePosFix.y, 0);
 	for (int i = 0; i < controlPoints->verts.size(); i++) {
 		if (glm::distance(mousePosFix, controlPoints->verts[i]) < 0.35f) {
 			activePoint->verts[0] = controlPoints->verts[i];
@@ -204,15 +212,16 @@ bool Program::selectControlPoint() {
 	return false;
 }
 
-void Program::moveActivePoint() {
-	const glm::vec3 mousePosFix = fixMousePoisiton();
+void Program::moveActivePoint() const
+{
+	const glm::vec4 tempMousePosFix = glm::inverse(activePoint->modelMatrix) * fixMousePoisiton();
+	const glm::vec3 mousePosFix = glm::vec3(tempMousePosFix.x, tempMousePosFix.y, 0);
 	activePoint->verts[0] = mousePosFix;
 	controlPoints->verts[activePointIndex] = mousePosFix;
 	renderEngine->updateBuffers(*controlPoints);
 }
 
 void Program::removeActivePoint() {
-	const glm::vec3 mousePosFix = fixMousePoisiton();
 
 	if(controlPoints->verts.empty()) {
 		return; // If array is already empty, return so we don't crash
@@ -244,7 +253,7 @@ void Program::updateActivePoint() {
 
 	// Select and modify control points
 	if(mousePosition->z == 1) {
-		mousePosition->z = selectControlPoint() ? 11 : 0;
+		mousePosition->z = selectControlPoint() ? 11 : 33;
 	}
 	if (mousePosition->z == 11) {
 		moveActivePoint();
@@ -329,10 +338,6 @@ void Program::createUniformKnots() {
 	// {
 	// 	knots.push_back(1);
 	// }
-}
-
-void Program::updateActiveKnot() {
-
 }
 
 void Program::updateBsplineCurve() {
@@ -421,11 +426,91 @@ void Program::updateDemoPoint() {
 }
 
 void Program::createKnots() {
+	activeKnot = std::make_shared<Geometry>();
+	activeKnot->drawMode = GL_POINTS;
+	activeKnot->color = glm::vec4(1.0f, 0.25f, 1.0f, 1.0f);
+	renderEngine->assignBuffers(*activeKnot);
+	geometryObjects.push_back(activeKnot);
+
 	knotsRender = std::make_shared<Geometry>();
 	knotsRender->drawMode = GL_POINTS;
 	knotsRender->color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	renderEngine->assignBuffers(*knotsRender);
 	geometryObjects.push_back(knotsRender);
+}
+
+bool Program::selectKnot() {
+	// Convert screen res to screen space
+	const glm::vec4 tempMousePosFix = fixMousePoisiton();
+	const glm::vec3 mousePosFix = glm::vec3(tempMousePosFix.x, tempMousePosFix.y, 0);
+	for (int i = curveOrder; i < knotsRender->verts.size()-curveOrder; i++) {
+		if (glm::distance(mousePosFix, knotsRender->verts[i]) < 0.35f) {
+			if(activeKnot->verts.empty())
+			{
+				activeKnot->verts.push_back(knotsRender->verts[i]);
+			} else {
+				activeKnot->verts[0] = knotsRender->verts[i];
+			}
+			activeKnotIndex = i;
+			return true;
+		}
+	}
+	return false;
+}
+
+void Program::moveKnot() {
+	const glm::vec4 tempMousePosFix = fixMousePoisiton();
+	const glm::vec3 mousePosFix = glm::vec3(tempMousePosFix.x, -9, 0);
+	float normMousePos = (mousePosFix.x + 12) / 24;
+	if (knots[activeKnotIndex - 1] > normMousePos)
+	{
+		normMousePos = knots[activeKnotIndex - 1]+0.0001;
+	}
+	if (knots[activeKnotIndex + 1] < normMousePos)
+	{
+		normMousePos = knots[activeKnotIndex + 1]-0.0001;
+	}
+	// activeKnot->verts[0] = mousePosFix;
+	if (activeKnot->verts.empty())
+	{
+		activeKnot->verts.emplace_back(normMousePos * 24 - 12 ,-9, 0);
+	}
+	else {
+		activeKnot->verts[0] = glm::vec3(normMousePos * 24 - 12, -9, 0);
+	}
+	knotsRender->verts[activeKnotIndex] = glm::vec3(normMousePos * 24 - 12, -9, 0);
+	knots[activeKnotIndex] = normMousePos;
+	renderEngine->updateBuffers(*knotsRender);
+}
+
+void Program::updateActiveKnot() {
+	knotsRender->verts.clear();
+	activeKnot->verts.clear();
+	knotsRender->verts.reserve(knots.size());
+	for (int i = 0; i < knots.size(); i++)
+	{
+		knotsRender->verts.emplace_back(knots[i]*24-12, -9, 0);
+	}
+	// Select and modify control points
+	if (mousePosition->z == 33) {
+		mousePosition->z = selectKnot() ? 22 : 0;
+	}
+	if (mousePosition->z == 22) {
+		moveKnot();
+	}
+
+	// // Add new control points
+	// if (mousePosition->z == 2) {
+	// 	addActivePoint();
+	// 	mousePosition->z = 0;
+	// }
+
+	// if (removePoint) {
+	// 	removeActivePoint();
+	// 	removePoint = false;
+	// }
+	renderEngine->updateBuffers(*knotsRender);
+	renderEngine->updateBuffers(*activeKnot);
 }
 
 
@@ -457,7 +542,6 @@ void Program::drawUI() {
 		
 		if(ImGui::Button("Remove point")) {
 			removePoint = true;
-			
 			// Fix the curve order to match how many control points are left
 			if(curveOrder > controlPointSave.size()-1 && curveOrder>2)
 			{
@@ -525,6 +609,7 @@ void Program::mainLoop() {
 			savePoints();
 		}
 
+		clearKnots();
 		if(drawKnots)
 		{
 			updateActiveKnot();

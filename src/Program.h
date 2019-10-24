@@ -32,6 +32,7 @@ private:
 	static void error(int error, const char* description);
 	void setupWindow();
 
+	void clearKnots();
 	void mainLoop();
 	void drawUI();
 
@@ -49,11 +50,11 @@ private:
 	void savePoints();
 	void resetPoints();
 	void addControlPoint(glm::vec3 oldPoint);
-	glm::vec3 fixMousePoisiton() const;
+	glm::vec4 fixMousePoisiton() const;
 	void addActivePoint();
 	void updateControlPoints();
 	bool selectControlPoint();
-	void moveActivePoint();
+	void moveActivePoint() const;
 	void removeActivePoint();
 	void updateActivePoint();
 	// Methods for controlling the resulting curves
@@ -68,6 +69,8 @@ private:
 	void createKnots();
 	void createStandardKnots();
 	void createUniformKnots();
+	bool selectKnot();
+	void moveKnot();
 	void updateActiveKnot();
 
 
@@ -91,6 +94,7 @@ private:
 	bool drawKnots = true;
 
 	int activePointIndex = 0;
+	int activeKnotIndex = 0;
 
 	// Geometry storage for b-splines
 	std::shared_ptr<Geometry> controlPoints;
@@ -99,6 +103,7 @@ private:
 	std::shared_ptr<Geometry> demoLines;
 	std::shared_ptr<Geometry> demoPoint;
 	std::shared_ptr<Geometry> knotsRender;
+	std::shared_ptr<Geometry> activeKnot;
 
 
 	std::vector<glm::vec3> controlPointSave;
