@@ -553,7 +553,7 @@ void Program::drawUI() {
 		ImGui::DragInt("Resolution", (int*)&uIncrement, 1, 1, 10000);
 		ImGui::DragFloat("Demo point", (float*)&demoU, 0.001, 0,1);
 		
-		if(ImGui::Button("Remove point")) {
+		if(ImGui::Button("Remove point")&&drawPoints) {
 			removePoint = true;
 			// Fix the curve order to match how many control points are left
 			if(curveOrder > controlPointSave.size()-1 && curveOrder>2)
