@@ -60,11 +60,16 @@ private:
 	void clearCurve();
 	int computeDelta(float &uValue);
 	glm::vec3 deBoorAlg(int delta, float uValue);
-	void createKnots();
 	void updateBsplineCurve();
 	void deBoorAlgShow(int delta);
 	void updateDemoLines();
 	void updateDemoPoint();
+	// Methods for controlling knots
+	void createKnots();
+	void createStandardKnots();
+	void createUniformKnots();
+	void updateActiveKnot();
+
 
 	// Class variables for controlling the hypocycloid.
 	float rotation = 0;
@@ -73,13 +78,18 @@ private:
 	
 	int curveOrder = 2;
 	int uIncrement = 100;
+	float demoU = 0;
+	
 	bool removePoint = false;
 	bool drawCurve = true;
 	bool drawPoints = true;
 	bool drawDemos = false;
 
-	float demoU = 0;
-	
+	bool standardKnots = true;
+	bool uniformKnots = false;
+	bool updateKnots = true;
+	bool drawKnots = true;
+
 	int activePointIndex = 0;
 
 	// Geometry storage for b-splines
@@ -88,11 +98,15 @@ private:
 	std::shared_ptr<Geometry> bsplineCurve;
 	std::shared_ptr<Geometry> demoLines;
 	std::shared_ptr<Geometry> demoPoint;
+	std::shared_ptr<Geometry> knotsRender;
+
 
 	std::vector<glm::vec3> controlPointSave;
 	std::vector<glm::vec3> activePointSave;
 
 	std::vector<float> knots;
+
+
 
 	std::shared_ptr<glm::vec3> mousePosition;
 

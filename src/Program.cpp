@@ -154,7 +154,7 @@ void Program::updateControlPoints() {
 
 void Program::addControlPoint(glm::vec3 oldPoint) {
 	activePointIndex = controlPoints->verts.size();
-
+	updateKnots = true;
 	controlPoints->verts.emplace_back(oldPoint);
 }
 
@@ -230,6 +230,7 @@ void Program::removeActivePoint() {
 		activePoint->verts[0] = controlPoints->verts[activePointIndex];
 	}
 	renderEngine->updateBuffers(*controlPoints);
+	updateKnots = true;
 }
 
 
@@ -300,7 +301,7 @@ int Program::computeDelta(float &uValue) {
  	return contributorPoints[0];
  }
 
-void Program::createKnots(){
+void Program::createStandardKnots(){
 	knots.clear();
 	for (int i = 0; i < curveOrder - 1; ++i) {
 		knots.push_back(0);
@@ -313,14 +314,26 @@ void Program::createKnots(){
 	{
 		knots.push_back(1);
 	}
-	// std::cout << "Knots: ";
-	// for (float knot : knots)
-	// {
-	// 	std::cout << knot << ",";
-	// }
-	// std::cout << std::endl;
 }
 
+void Program::createUniformKnots() {
+	knots.clear();
+	// for (int i = 0; i < curveOrder - 1; ++i) {
+	// 	knots.push_back(0);
+	// }
+	const float knotSpacing = 1.f / float(controlPointSave.size() + curveOrder - 1);
+	for (float i = 0; i <= 1; i += knotSpacing) {
+		knots.push_back(i);
+	}
+	// for (int i = 0; i < curveOrder - 1; ++i)
+	// {
+	// 	knots.push_back(1);
+	// }
+}
+
+void Program::updateActiveKnot() {
+
+}
 
 void Program::updateBsplineCurve() {
 	// Create b-spline curve
@@ -335,7 +348,7 @@ void Program::updateBsplineCurve() {
 	const float uOffset = (1.f / (float)uIncTemp);
 	bsplineCurve->verts.reserve(uIncTemp);
 	// Iterate through u values and generate curve
-	float u = knots[curveOrder - 1];
+	float u = knots[0];
 	for (int i = 0; i <= uIncTemp; i++)
 	{
 		// Get the index of the control point that matters
@@ -407,6 +420,14 @@ void Program::updateDemoPoint() {
 	renderEngine->updateBuffers(*demoPoint);
 }
 
+void Program::createKnots() {
+	knotsRender = std::make_shared<Geometry>();
+	knotsRender->drawMode = GL_POINTS;
+	knotsRender->color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	renderEngine->assignBuffers(*knotsRender);
+	geometryObjects.push_back(knotsRender);
+}
+
 
 void Program::drawUI() {
 	// Start ImGui frame
@@ -421,22 +442,22 @@ void Program::drawUI() {
 		float fontSize = 1.75f;
 		ImGui::SetWindowFontScale(fontSize);
 
-		ImGui::ColorEdit3("clear color", (float*)&clear_color);
-		ImGui::ColorEdit4("line color", (float*)&lineColor);
+		ImGui::ColorEdit3("Clear color", (float*)&clear_color);
+		ImGui::ColorEdit4("Line color", (float*)&lineColor);
 
 		ImGui::Text("Transfromations:");
-		ImGui::DragFloat("rotation", (float*)&rotation, 0.1f);
-		ImGui::DragFloat("scale factor", (float*)&scale, 0.001f);
-		ImGui::DragFloat2("translate the model", (float*)&translation, 0.01f);
+		ImGui::DragFloat("Rotation", (float*)&rotation, 0.1f);
+		ImGui::DragFloat("Scale factor", (float*)&scale, 0.001f);
+		ImGui::DragFloat2("Translate the model", (float*)&translation, 0.01f);
 
 		ImGui::Text("Curve parameters:");
-		ImGui::DragInt("order (k value)", (int*)&curveOrder, 1,2,controlPointSave.size());
-		ImGui::DragInt("resolution (u increment)", (int*)&uIncrement, 1,1,10000);
-		ImGui::DragFloat("demo point", (float*)&demoU, 0.001, 0,1);
+		ImGui::DragInt("Order (k value)", (int*)&curveOrder, 1,2,controlPointSave.size());
+		ImGui::DragInt("Resolution (u increment)", (int*)&uIncrement, 1,1,10000);
+		ImGui::DragFloat("Demo point", (float*)&demoU, 0.001, 0,1);
 		
-		if(ImGui::Button("remove point")) {
+		if(ImGui::Button("Remove point")) {
 			removePoint = true;
-
+			
 			// Fix the curve order to match how many control points are left
 			if(curveOrder > controlPointSave.size()-1 && curveOrder>2)
 			{
@@ -453,11 +474,28 @@ void Program::drawUI() {
 		ImGui::SameLine();
 		ImGui::Checkbox("Draw demo point/geometry", (bool*)&drawDemos);
 
+		ImGui::Text("Bonus options:");
+		if (ImGui::Button("Use standard knots")) {
+			standardKnots = true;
+			updateKnots = true;
+			uniformKnots = false;
+		}
+
+		ImGui::SameLine();
+		ImGui::Checkbox("Draw knots", (bool*)&drawKnots);
+
+		// ImGui::SameLine();
+		// if (ImGui::Button("Use uniform knots")) {
+		// 	uniformKnots = true;
+		// 	updateKnots = true;
+		// 	standardKnots = false;
+		// }
+		// ImGui::DragFloat("NURB Value", )
 
 		ImGui::End();
 	}
 }
-
+float oldOrder = 0;
 // Main loop
 void Program::mainLoop() {
 	
@@ -467,11 +505,13 @@ void Program::mainLoop() {
 	lineColor = ImVec4(1.0f, 1.0f, 0.0f, 1.00f);
 
 	// createTestGeometryObject();
+	createDemoPoint();
+	createKnots();
 	createActivePoint();
 	createControlPoints();
 	createBsplineCurve();
 	createDemoLines();
-	createDemoPoint();
+
 
 	while(!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
@@ -485,9 +525,34 @@ void Program::mainLoop() {
 			savePoints();
 		}
 
+		if(drawKnots)
+		{
+			updateActiveKnot();
+		}
+
 		clearCurve();
 		if (controlPointSave.size() >= curveOrder && drawCurve) {
-			createKnots();
+			if(updateKnots || oldOrder!= curveOrder)
+			{
+				updateKnots = false;
+				oldOrder = curveOrder;
+				if (standardKnots) {
+					createStandardKnots();
+					// standardKnots = false;
+				}
+				// if(uniformKnots)
+				// {
+				// 	createUniformKnots();
+				// 	// uniformKnots = false;
+				// }
+				// std::cout << "Knots: ";
+				// for (float knot : knots)
+				// {
+				// 	std::cout << knot << ",";
+				// }
+				// std::cout << std::endl;
+			}
+
 			updateBsplineCurve();
 			if(drawDemos) {
 				updateDemoLines();
