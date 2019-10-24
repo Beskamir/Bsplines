@@ -516,7 +516,7 @@ void Program::updateActiveKnot() {
 		knotsRender->verts.emplace_back(knots[i]*24-12, -9, 0);
 	}
 	// Select and modify control points
-	if (mousePosition->z == 33) {
+	if (mousePosition->z == 33 || mousePosition->z == 1) {
 		mousePosition->z = selectKnot() ? 22 : 0;
 	}
 	if (mousePosition->z == 22) {
@@ -562,16 +562,19 @@ void Program::drawUI() {
 			}
 		}
 
-		ImGui::Text("Show:");
-
-		ImGui::SameLine();
+		// ImGui::Text("Show:");
+  //
+		// ImGui::SameLine();
 		ImGui::Checkbox("Curve", (bool*)&drawCurve);
 
 		ImGui::SameLine();
 		ImGui::Checkbox("Control points", (bool*)&drawPoints);
 
 		ImGui::SameLine();
-		ImGui::Checkbox("Geometry", (bool*)&drawDemos);
+		ImGui::Checkbox("Geometry", (bool*)&drawDemoGeom);
+		
+		ImGui::SameLine();
+		ImGui::Checkbox("Point", (bool*)&drawDemoPoint);
 
 		ImGui::Text("Bonus options:");
 		if (ImGui::Button("Use standard knots")) {
@@ -655,8 +658,10 @@ void Program::mainLoop() {
 			}
 
 			updateBsplineCurve();
-			if(drawDemos) {
+			if(drawDemoGeom) {
 				updateDemoLines();
+			}
+			if(drawDemoPoint) {
 				updateDemoPoint();
 			}
 		}

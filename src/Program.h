@@ -87,7 +87,8 @@ private:
 	bool removePoint = false;
 	bool drawCurve = true;
 	bool drawPoints = true;
-	bool drawDemos = false;
+	bool drawDemoGeom = false;
+	bool drawDemoPoint = false;
 
 	bool standardKnots = true;
 	bool uniformKnots = false;
