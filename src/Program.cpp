@@ -160,6 +160,7 @@ void Program::updateControlPoints() {
 
 
 void Program::addControlPoint(glm::vec3 oldPoint) {
+	nurbValues.push_back(1);
 	activePointIndex = controlPoints->verts.size();
 	updateKnots = true;
 	controlPoints->verts.emplace_back(oldPoint);
@@ -229,10 +230,10 @@ void Program::removeActivePoint() {
 
 	// Otherwise remove the active point and assign a new active point
 	controlPoints->verts.erase(controlPoints->verts.begin() + activePointIndex);
-
+	nurbValues.erase(nurbValues.begin() + activeKnotIndex);
 	if(controlPoints->verts.empty()) {
 		activePoint->verts.clear();
-		activePointIndex = -1;
+		activePointIndex = 0;
 	}
 	else {
 		activePointIndex = controlPoints->verts.size() - 1;
@@ -293,7 +294,7 @@ int Program::computeDelta(float &uValue) {
  	contributorPoints.reserve(curveOrder);
  	for (int i = 0; i < curveOrder; i++)
  	{
-		contributorPoints.push_back(controlPointSave[delta - i]);
+		contributorPoints.push_back(controlPointSave[delta - i]*nurbValues[delta-i]);
  	}
 
 	for (int r = curveOrder; r >= 2; r--)
@@ -309,6 +310,29 @@ int Program::computeDelta(float &uValue) {
 
  	return contributorPoints[0];
  }
+
+float Program::deBoorAlgWeightsOnly(int delta, float uValue) {
+	std::vector<float> contributorPoints;
+	// float curveDegree = curveOrder - 1;
+	contributorPoints.reserve(curveOrder);
+	for (int i = 0; i < curveOrder; i++)
+	{
+		contributorPoints.push_back(nurbValues[delta - i]);
+	}
+
+	for (int r = curveOrder; r >= 2; r--)
+	{
+		int i = delta;
+		for (int s = 0; s <= r - 2; s++)
+		{
+			float omega = (uValue - knots[i]) / (knots[i + r - 1] - knots[i]);
+			contributorPoints[s] = (omega * contributorPoints[s]) + ((1 - omega)*contributorPoints[s + 1]);
+			i--;
+		}
+	}
+
+	return contributorPoints[0];
+}
 
 void Program::createStandardKnots(){
 	knots.clear();
@@ -361,7 +385,7 @@ void Program::updateBsplineCurve() {
 		if (delta < 0) { return; }
 		// std::cout << "Delta: " << delta << std::endl;
 		// Calculate the point on the curve
-		bsplineCurve->verts.push_back(deBoorAlg(delta, u));
+		bsplineCurve->verts.push_back(deBoorAlg(delta, u)/deBoorAlgWeightsOnly(delta,u));
 		u += uOffset;
 	}
 	renderEngine->updateBuffers(*bsplineCurve);
@@ -421,7 +445,7 @@ void Program::updateDemoPoint() {
 	if (delta < 0) { return; }
 	// std::cout << "Delta: " << delta << std::endl;
 	// Calculate the point on the curve
-	demoPoint->verts.push_back(deBoorAlg(delta, demoU));
+	demoPoint->verts.push_back(deBoorAlg(delta, demoU)/ deBoorAlgWeightsOnly(delta,demoU));
 	renderEngine->updateBuffers(*demoPoint);
 }
 
@@ -498,17 +522,6 @@ void Program::updateActiveKnot() {
 	if (mousePosition->z == 22) {
 		moveKnot();
 	}
-
-	// // Add new control points
-	// if (mousePosition->z == 2) {
-	// 	addActivePoint();
-	// 	mousePosition->z = 0;
-	// }
-
-	// if (removePoint) {
-	// 	removeActivePoint();
-	// 	removePoint = false;
-	// }
 	renderEngine->updateBuffers(*knotsRender);
 	renderEngine->updateBuffers(*activeKnot);
 }
@@ -533,11 +546,11 @@ void Program::drawUI() {
 		ImGui::Text("Transfromations:");
 		ImGui::DragFloat("Rotation", (float*)&rotation, 0.1f);
 		ImGui::DragFloat("Scale factor", (float*)&scale, 0.001f);
-		ImGui::DragFloat2("Translate the model", (float*)&translation, 0.01f);
+		ImGui::DragFloat2("Translation", (float*)&translation, 0.01f);
 
 		ImGui::Text("Curve parameters:");
-		ImGui::DragInt("Order (k value)", (int*)&curveOrder, 1,2,controlPointSave.size());
-		ImGui::DragInt("Resolution (u increment)", (int*)&uIncrement, 1,1,10000);
+		ImGui::DragInt("Order", (int*)&curveOrder, 1, 2, controlPointSave.size());
+		ImGui::DragInt("Resolution", (int*)&uIncrement, 1, 1, 10000);
 		ImGui::DragFloat("Demo point", (float*)&demoU, 0.001, 0,1);
 		
 		if(ImGui::Button("Remove point")) {
@@ -549,14 +562,16 @@ void Program::drawUI() {
 			}
 		}
 
-		ImGui::SameLine();
-		ImGui::Checkbox("Draw curve", (bool*)&drawCurve);
+		ImGui::Text("Show:");
 
 		ImGui::SameLine();
-		ImGui::Checkbox("Draw control points", (bool*)&drawPoints);
+		ImGui::Checkbox("Curve", (bool*)&drawCurve);
 
 		ImGui::SameLine();
-		ImGui::Checkbox("Draw demo point/geometry", (bool*)&drawDemos);
+		ImGui::Checkbox("Control points", (bool*)&drawPoints);
+
+		ImGui::SameLine();
+		ImGui::Checkbox("Geometry", (bool*)&drawDemos);
 
 		ImGui::Text("Bonus options:");
 		if (ImGui::Button("Use standard knots")) {
@@ -574,11 +589,12 @@ void Program::drawUI() {
 		// 	updateKnots = true;
 		// 	standardKnots = false;
 		// }
-		// ImGui::DragFloat("NURB Value", )
+		ImGui::DragFloat("NURB Value", (float*)&nurbValues[activePointIndex], 0.001, 0);
 
 		ImGui::End();
 	}
 }
+
 float oldOrder = 0;
 // Main loop
 void Program::mainLoop() {
@@ -610,7 +626,7 @@ void Program::mainLoop() {
 		}
 
 		clearKnots();
-		if(drawKnots)
+		if(drawKnots && !knots.empty())
 		{
 			updateActiveKnot();
 		}

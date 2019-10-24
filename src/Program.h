@@ -61,6 +61,7 @@ private:
 	void clearCurve();
 	int computeDelta(float &uValue);
 	glm::vec3 deBoorAlg(int delta, float uValue);
+	float deBoorAlgWeightsOnly(int delta, float uValue);
 	void updateBsplineCurve();
 	void deBoorAlgShow(int delta);
 	void updateDemoLines();
@@ -111,7 +112,7 @@ private:
 
 	std::vector<float> knots;
 
-
+	std::vector<float> nurbValues = {1};
 
 	std::shared_ptr<glm::vec3> mousePosition;
 
